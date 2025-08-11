@@ -14,10 +14,25 @@ export default defineManifest({
     },
     default_popup: "src/popup/index.html",
   },
+  permissions: [
+    'contentSettings',
+    'sidePanel',
+    'storage',
+    'offscreen',
+    'declarativeNetRequest',
+  ],
   content_scripts: [
     {
       js: ["src/content/main.tsx"],
       matches: ["https://*/*"],
     },
   ],
+  host_permissions: ["https://www.google.com/*"],
+  side_panel: {
+    default_path: "src/sidepanel/index.html"
+  },
+  background: {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  }
 });

@@ -1,3 +1,7 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@radix-ui/themes/styles.css";
+
 .popup-container {
   position: fixed;
   right: 0;
@@ -18,10 +22,8 @@
   box-shadow:
     0 4px 6px -1px rgb(0 0 0 / 0.1),
     0 2px 4px -2px rgb(0 0 0 / 0.1);
-  width: max-content;
-  height: min-content;
-  padding: 0.5rem 1rem;
-  margin: auto 0.5rem 0 0;
+  max-height: 80dvh;
+  width: 500px;
   transition: opacity 300ms;
 }
 
