@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { generateRedirectRuleId } from "@/utils/generateRedirectRuleId";
 import { logger } from "@/utils/logger";
 import styles from './Dashboard.module.scss';
-import { RedirectRule } from "./RedirectRule/RedirectRule";
+import { RedirectRuleForm } from "./RedirectRuleForm/RedirectRuleForm";
 import { RuleCard } from "./RuleCard/RuleCard";
 
 export const Dashboard = () => {
@@ -94,9 +94,8 @@ export const Dashboard = () => {
             </Flex>
           </Box>
           <Box>
-            <RedirectRule form={form} />
+            <RedirectRuleForm form={form} />
           </Box>
-
           {rulesInStorage?.map((rule) => {
             return (
               <RuleCard rule={rule} onClick={async () => {

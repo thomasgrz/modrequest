@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { withForm } from '../../hooks/useForm/useForm'
 import styles from './RedirectRule.module.scss'
 
-export const RedirectRule = withForm({
+export const RedirectRuleForm = withForm({
     ...dashboardFormOptions,
     render: ({ form }) => {
         const [isEnabled, setIsEnabled] = useState(false);
