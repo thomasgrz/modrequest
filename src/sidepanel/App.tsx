@@ -2,7 +2,7 @@ import "./App.css";
 
 import "@radix-ui/themes/styles.css";
 
-import { Dashboard } from "@/components/Dashboard";
+import { Dashboard } from "@/components/Dashboard/Dashboard";
 import { Theme } from "@radix-ui/themes";
 
 export default function App() {

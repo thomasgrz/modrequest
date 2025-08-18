@@ -1,4 +1,12 @@
+@import "@radix-ui/themes/styles.css";
+
+#root {
+  padding: 4px;
+  width: 100%;
+}
+
 :root {
+  width: 100%;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -13,6 +21,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.radix-themes:where([data-is-root-theme="true"]) {
+  min-height: unset;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -24,6 +36,7 @@ a:hover {
 }
 
 body {
+  width: 100%;
   margin: 0;
   display: flex;
   place-items: center;

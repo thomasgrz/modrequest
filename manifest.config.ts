@@ -13,26 +13,33 @@ export default defineManifest({
       48: "public/logo.png",
     },
     default_popup: "src/popup/index.html",
+    default_title: "click to open sidepanel",
   },
+  devtools_page: "src/sidepanel/index.html",
   permissions: [
-    'contentSettings',
-    'sidePanel',
-    'storage',
-    'offscreen',
-    'declarativeNetRequest',
+    "contentSettings",
+    "sidePanel",
+    "offscreen",
+    "declarativeNetRequest",
+    "nativeMessaging",
+    "storage",
+    "contextMenus", // add an item to the menu displayed on right click
+    "webRequest", // intercept request as it goes out (rather than subsequent requests after page load)
+    "webNavigation",
   ],
-  content_scripts: [
-    {
-      js: ["src/content/main.tsx"],
-      matches: ["https://*/*"],
-    },
-  ],
-  host_permissions: ["https://www.google.com/*"],
+  // content_scripts: [
+  //   {
+  //     js: ["src/content/main.tsx"],
+  //     matches: ["https://*/*"],
+  //   },
+  // ],
+  options_page: "src/options/index.html",
+  host_permissions: ["<all_urls>"],
   side_panel: {
-    default_path: "src/sidepanel/index.html"
+    default_path: "src/sidepanel/index.html",
   },
   background: {
-    "service_worker": "src/background.ts",
-    "type": "module"
-  }
+    service_worker: "src/background.ts",
+    type: "module",
+  },
 });

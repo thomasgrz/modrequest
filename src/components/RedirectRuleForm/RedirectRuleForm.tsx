@@ -1,44 +1,59 @@
-import { dashboardFormOptions } from '@/contexts/dashboard-context.ts'
-import { Button, Card, Flex, Switch } from '@radix-ui/themes'
-import { useState } from 'react'
-import { withForm } from '../../hooks/useForm/useForm'
-import styles from './RedirectRule.module.scss'
+import { dashboardFormOptions } from "@/contexts/dashboard-context.ts";
+import { Box, Button, Flex } from "@radix-ui/themes";
+import CardAddIcon from "../../assets/card-add.svg";
+import { withForm } from "../../hooks/useForm/useForm";
+import styles from "./RedirectRuleForm.module.scss";
 
 export const RedirectRuleForm = withForm({
-    ...dashboardFormOptions,
-    render: ({ form }) => {
-        const [isEnabled, setIsEnabled] = useState(false);
-
-        return (
-            <Card className={styles.Card} variant='classic' data-ui-enabled={isEnabled}>
-                <Flex justify={"between"}>
-                    <h2>Redirect rule</h2>
-                    <Switch onCheckedChange={(value) => setIsEnabled(value)} className={styles.SwitchRoot} />
-                </Flex>
-                <Flex gap="1" direction={"column"}>
-                    <Flex direction={"row"}>
-                        <form.AppField
-
-                            name="source"
-                            children={(field) => <field.TextField placeholder='Example: https://example.com/(.*)' htmlFor="source" label="Source" />}
-                        />
-                    </Flex>
-                    <form.AppField
-                        name="destination"
-                        children={(field) => <field.TextField placeholder='Example: https://google.com/$1' htmlFor='source' label="Destination" />}
-                    />
-                </Flex>
-                <Flex flexGrow={"1"} justify={"end"}>
-                    <Button
-                        onClick={() => form.handleSubmit({ submitAction: 'redirect-rule' })}
-                        type="submit"
-                        size="1"
-                    >
-                        Add config
-                    </Button>
-                </Flex>
-
-            </Card>
-        )
-    },
-})
+  ...dashboardFormOptions,
+  render: ({ form }) => {
+    const validators = {
+      onChange: ({ value }: { value?: string }) =>
+        value?.trim()?.length ? undefined : "Please enter a valid input.",
+    };
+    return (
+      <Box className={styles.Card} p="2">
+        <Flex gap="1" direction={"column"}>
+          <Flex gap="1" direction={"column"}>
+            <Flex direction={"row"}>
+              <form.AppField
+                validators={validators}
+                name="source"
+                children={(field) => (
+                  <field.TextField
+                    placeholder="Example: https://example.com/(.*)"
+                    htmlFor="source"
+                    label="Source"
+                  />
+                )}
+              />
+            </Flex>
+            <form.AppField
+              validators={validators}
+              name="destination"
+              children={(field) => (
+                <field.TextField
+                  placeholder="Example: https://google.com/$1"
+                  htmlFor="source"
+                  label="Destination"
+                />
+              )}
+            />
+          </Flex>
+          <Flex flexGrow={"1"} justify={"end"}>
+            <Button
+              onClick={() =>
+                form.handleSubmit({ submitAction: "redirect-rule" })
+              }
+              type="submit"
+              size="1"
+            >
+              <CardAddIcon />
+              Add config
+            </Button>
+          </Flex>
+        </Flex>
+      </Box>
+    );
+  },
+});

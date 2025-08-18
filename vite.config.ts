@@ -1,11 +1,12 @@
-import path from "node:path";
 import { crx } from "@crxjs/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
 import { defineConfig } from "vite";
+import svgr from "vite-plugin-svgr";
 import zip from "vite-plugin-zip-pack";
 import manifest from "./manifest.config.js";
 import { name, version } from "./package.json";
-import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   resolve: {
@@ -16,6 +17,15 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    svgr({
+      svgrOptions: {
+        exportType: "default",
+        ref: true,
+        svgo: false,
+        titleProp: true,
+      },
+      include: "**/*.svg",
+    }),
     crx({ manifest }),
     zip({ outDir: "release", outFileName: `crx-${name}-${version}.zip` }),
   ],
