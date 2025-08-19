@@ -5,9 +5,15 @@
 }
 
 .Dashboard {
-  height: 100dvh;
+  // height: 100dvh;
 }
 
 .RedirecRulesContainer {
   background-color: #a288e3;
+}
+
+.TabsContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }

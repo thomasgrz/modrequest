@@ -98,7 +98,9 @@ export const RuleCard = ({
       {hit && <Badge color="green">Recently hit</Badge>}
       {rule.meta.error && (
         <Box p="1">
-          <Callout.Root color="red">{rule.meta.error}</Callout.Root>
+          <Callout.Root variant="surface" size="1" color="red">
+            {rule.meta.error}
+          </Callout.Root>
         </Box>
       )}
       <Collapsible.Root onOpenChange={setIsOpen} open={isOpen}>

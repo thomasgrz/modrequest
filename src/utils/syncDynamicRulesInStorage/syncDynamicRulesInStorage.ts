@@ -7,6 +7,57 @@ export const syncDynamicRulesInStorage = async () => {
   // Get all the rules _associated_ with the extension from the browser
   const rulesFromBrowser = await chrome.declarativeNetRequest.getDynamicRules();
 
+  const ruleIdsFromBrowser = rulesFromBrowser.map((rule) => rule.id);
+
+  // Find all the rules we _should_ enable in the browser
+  const rulesMissingFromBrowser = rulesFromUser.filter((fromUser) => {
+    const isRuleMissingFromBrowser = !ruleIdsFromBrowser.includes(
+      fromUser.details.id,
+    );
+    return isRuleMissingFromBrowser;
+  });
+
+  // Try to add new dynamic rule to both browser + storage
+  const safelyAddNewRule = async (rule: chrome.declarativeNetRequest.Rule) => {
+    try {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: [rule],
+      });
+    } catch (e) {
+      logger("Failed to sync dynamic rules", e);
+      const errorMessage = new RegExp(/Rule\swith\sid\s(.\d+)/).exec(
+        (e as Error).message,
+      );
+      // Grab the rule id being referenced in the error
+      const errorRuleId = Number(errorMessage?.[1]);
+      if (!errorRuleId) return;
+      const currentRules = await getRulesFromStorage();
+      const rulesWithError = currentRules.map((rule) => {
+        if (rule.details.id === errorRuleId) {
+          return {
+            ...rule,
+            meta: {
+              ...rule.meta,
+              error: (e as Error).message,
+            },
+          };
+        }
+
+        return rule;
+      });
+
+      await chrome.storage.local.set({
+        rules: rulesWithError,
+      });
+    }
+  };
+
+  await Promise.allSettled(
+    rulesMissingFromBrowser
+      .map((rule) => rule.details)
+      .map(async (rule) => safelyAddNewRule(rule)),
+  );
+
   const ruleIdsFromStorage = rulesFromUser.map((rule) => rule.details.id);
 
   // Find any associated rules in browser that arent mentioned
@@ -29,48 +80,9 @@ export const syncDynamicRulesInStorage = async () => {
     ...rulesDisabledByUser.map((rule) => rule.details.id),
   ];
 
-  const ruleIdsFromBrowser = rulesFromBrowser.map((rule) => rule.id);
-
-  // Find all the rules we _should_ enable in the browser
-  const rulesMissingFromBrowser = rulesFromUser.filter((fromUser) => {
-    const isRuleMissingFromBrowser = !ruleIdsFromBrowser.includes(
-      fromUser.details.id,
-    );
-    return isRuleMissingFromBrowser;
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds,
   });
 
-  const addRules = rulesMissingFromBrowser.map((rule) => rule.details);
-
-  try {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules,
-      removeRuleIds,
-    });
-  } catch (e) {
-    logger("Failed to sync dynamic rules", e);
-    const errorMessage = new RegExp(/Rule\swith\sid\s(.\d+)/).exec(
-      (e as Error).message,
-    );
-    const errorRuleId = Number(errorMessage?.[1]);
-    if (!errorRuleId) return;
-    const currentRules = await getRulesFromStorage();
-    const rulesWithError = currentRules.map((rule) => {
-      if (rule.details.id === errorRuleId) {
-        return {
-          ...rule,
-          meta: {
-            ...rule.meta,
-            error: (e as Error).message,
-          },
-        };
-      }
-
-      return rule;
-    });
-
-    await chrome.storage.local.set({
-      rules: rulesWithError,
-    });
-  }
   return;
 };

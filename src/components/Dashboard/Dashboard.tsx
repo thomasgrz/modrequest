@@ -167,12 +167,12 @@ export const Dashboard = ({ showRules = true }: { showRules: boolean }) => {
           <Tabs.Trigger value="redirect-rules">Redirects</Tabs.Trigger>
           <Tabs.Trigger value="debug">Debug</Tabs.Trigger>
         </Tabs.List>
-        <Tabs.Content value="debug">
+        <Tabs.Content className={styles.TabsContent} value="debug">
           {debugValue?.map?.((rule: RedirectRule) => {
             return <RuleCard rule={rule} onClick={() => {}} />;
           })}
         </Tabs.Content>
-        <Tabs.Content value="redirect-rules">
+        <Tabs.Content className={styles.TabsContent} value="redirect-rules">
           <Flex height={"100%"} direction="column" flexGrow={"1"}>
             <form
               onSubmit={async (e) => {
@@ -183,26 +183,23 @@ export const Dashboard = ({ showRules = true }: { showRules: boolean }) => {
                 <RedirectRuleForm form={form} />
               </Box>
             </form>
-            <Separator size={"4"} my="3" />
+            <Separator size={"4"} my="1" />
+            <DashboardControls
+              ruleCount={displayedRules.length}
+              allPaused={!!allPaused}
+              onSyncAllRules={handleSyncAllRules}
+              onResumeAllRules={handleAllResumed}
+              onPauseAllRules={handleAllPaused}
+              onDeleteAllRules={deleteAllRulesInStorage}
+            />
+            <Separator size={"4"} my="1" />
             <Flex p="1" flexGrow={"1"} direction={"column"} justify={"between"}>
-              <Box>
-                <Flex gap="1" direction="column">
-                  {showRules &&
-                    displayedRules?.map((rule) => {
-                      return <RuleCard rule={rule} onClick={() => {}} />;
-                    })}
-                </Flex>
-              </Box>
-              <Box width={"100%"} position={"fixed"} left="0" bottom="0">
-                <Separator size={"4"} />
-                <DashboardControls
-                  allPaused={!!allPaused}
-                  onSyncAllRules={handleSyncAllRules}
-                  onResumeAllRules={handleAllResumed}
-                  onPauseAllRules={handleAllPaused}
-                  onDeleteAllRules={deleteAllRulesInStorage}
-                />
-              </Box>
+              <Flex gap="1" direction="column-reverse">
+                {showRules &&
+                  displayedRules?.map((rule) => {
+                    return <RuleCard rule={rule} onClick={() => {}} />;
+                  })}
+              </Flex>
             </Flex>
           </Flex>
         </Tabs.Content>
