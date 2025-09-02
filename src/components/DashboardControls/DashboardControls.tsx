@@ -2,7 +2,6 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { AlertDialog, Box, Button, Flex } from "@radix-ui/themes";
 import Pause from "../../assets/pause.svg";
 import Play from "../../assets/play.svg";
-import Refresh from "../../assets/refresh.svg";
 import styles from "./DashboardControls.module.scss";
 
 export const DashboardControls = ({
@@ -11,10 +10,8 @@ export const DashboardControls = ({
   onDeleteAllRules,
   onPauseAllRules,
   onResumeAllRules,
-  onSyncAllRules,
 }: {
   ruleCount?: number;
-  onSyncAllRules: () => void;
   onDeleteAllRules: () => void;
   onPauseAllRules: () => void;
   onResumeAllRules: () => void;
@@ -46,14 +43,14 @@ export const DashboardControls = ({
             Pause
           </Button>
         )}
-        <Button
+        {/* <Button
           className={styles.SyncAllRules}
           size={"3"}
           onClick={onSyncAllRules}
         >
           <Refresh />
           Sync
-        </Button>
+        </Button> */}
         <AlertDialog.Root>
           <AlertDialog.Trigger>
             <Button

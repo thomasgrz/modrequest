@@ -5,13 +5,13 @@ export default defineManifest({
   manifest_version: 3,
   name: pkg.name,
   version: pkg.version,
-  icons: {
-    48: "public/logo.png",
-  },
+  // icons: {
+  //   48: "public/logo.png",
+  // },
   action: {
-    default_icon: {
-      48: "public/logo.png",
-    },
+    // default_icon: {
+    //   48: "public/logo.png",
+    // },
     default_popup: "src/popup/index.html",
     default_title: "click to open sidepanel",
   },

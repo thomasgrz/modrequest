@@ -1,0 +1,29 @@
+import { Badge, DataList } from "@radix-ui/themes";
+import { RedirectRule } from "../RuleCard/RuleCard";
+
+export const RedirectRulePreview = (props: { rule: RedirectRule }) => {
+  const { rule } = props;
+
+  return (
+    <DataList.Root trim="end" size="1" m="1">
+      <DataList.Item align="center">
+        <DataList.Label>Type:</DataList.Label>
+        <DataList.Value>
+          <Badge color="cyan" variant="outline">
+            Redirect
+          </Badge>
+        </DataList.Value>
+      </DataList.Item>
+      <DataList.Item>
+        <DataList.Label>Redirect:</DataList.Label>
+        <DataList.Value>{rule?.details?.action?.redirect?.url}</DataList.Value>
+      </DataList.Item>
+      <DataList.Item>
+        <DataList.Label>RegEx:</DataList.Label>
+        <DataList.Value>
+          <strong>{rule?.details?.condition?.regexFilter}</strong>
+        </DataList.Value>
+      </DataList.Item>
+    </DataList.Root>
+  );
+};

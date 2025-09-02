@@ -16,7 +16,6 @@ export default function TextInput({
   const field = useFieldContext<string>();
 
   const errors = useStore(field.store, (state) => state.meta.errors);
-  console.log(field.state);
   return (
     <Box flexGrow={"1"}>
       <Flex gap={"1"} align={"center"}>

@@ -1,18 +1,29 @@
 import { dashboardFormOptions } from "@/contexts/dashboard-context";
 import { useAppForm } from "@/hooks/useForm/useForm";
-import { Box, Callout, Flex, Separator, Tabs } from "@radix-ui/themes";
+import {
+  Box,
+  Callout,
+  Flex,
+  SegmentedControl,
+  Separator,
+} from "@radix-ui/themes";
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { addRulesInStorage } from "@/utils/addRulesInStorage/addRulesInStorage";
 import { deleteAllRulesInStorage } from "@/utils/deleteAllRulesInStorage/deleteAllRulesInStorage";
-import { generateRedirectRuleId } from "@/utils/generateRedirectRuleId";
+import { generateRuleId } from "@/utils/generateRedirectRuleId";
 import { getRulesFromStorage } from "@/utils/getRulesFromStorage/getRulesFromStorage";
 import { logger } from "@/utils/logger";
 import { subscribeToRuleChanges } from "@/utils/subscribeToRuleChanges/subscribeToRuleChanges";
 import { DashboardControls } from "../DashboardControls/DashboardControls";
+import { HeaderForm } from "../HeaderForm/HeaderForm";
 import { RedirectRuleForm } from "../RedirectRuleForm/RedirectRuleForm";
-import { RedirectRule, RuleCard } from "../RuleCard/RuleCard";
+import {
+  RedirectRule,
+  RequestHeaderRule,
+  RuleCard,
+} from "../RuleCard/RuleCard";
 import styles from "./Dashboard.module.scss";
 
 const createRedirectRule = (rule: {
@@ -35,16 +46,57 @@ const createRedirectRule = (rule: {
         resourceTypes: ["main_frame"],
         regexFilter: rule.source,
       },
-      id: generateRedirectRuleId(),
+      id: generateRuleId(),
     },
   };
 };
 
-export const Dashboard = ({ showRules = true }: { showRules: boolean }) => {
+const createHeaderRule = (rule: {
+  headerKey: string;
+  headerValue: string;
+}): RequestHeaderRule => {
+  return {
+    meta: {
+      enabledByUser: true,
+      createdAt: new Date().getTime(),
+    },
+    details: {
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          {
+            header: rule.headerKey,
+            operation: "set",
+            value: rule.headerValue,
+          },
+        ],
+      },
+      condition: {
+        resourceTypes: [
+          "sub_frame",
+          "font",
+          "main_frame",
+          "xmlhttprequest",
+          "script",
+          "image",
+          "webbundle",
+          "media",
+          "other",
+          "object",
+        ],
+        regexFilter: ".*",
+      },
+      id: generateRuleId(),
+    },
+  };
+};
+
+export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   const [displayedRules, setDisplayedRules] = useState<RedirectRule[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [allPaused, setAllPaused] = useState<boolean | null>(null);
-  const [debugValue, setDebugValue] = useState<RedirectRule[]>();
+  const [selectedConfigForm, setSelectedConfigForm] =
+    useState("redirect-rules");
 
   const form = useAppForm({
     ...dashboardFormOptions,
@@ -56,6 +108,11 @@ export const Dashboard = ({ showRules = true }: { showRules: boolean }) => {
       logger(`Selected action - ${meta.submitAction}`, value);
       if (meta.submitAction === "redirect-rule") {
         addRulesInStorage([createRedirectRule(value)]);
+        return;
+      }
+      debugger;
+      if (meta.submitAction === "add-header") {
+        addRulesInStorage([createHeaderRule(value)]);
         return;
       }
     },
@@ -135,75 +192,77 @@ export const Dashboard = ({ showRules = true }: { showRules: boolean }) => {
     setAllPaused(false);
   };
 
-  const handleSyncAllRules = async () => {
-    const enabledRules = await chrome.declarativeNetRequest.getDynamicRules();
+  const rulesSortedByCreationTime = () =>
+    displayedRules.sort((item1, item2) => {
+      return item2.meta.createdAt - item1.meta.createdAt;
+    });
 
-    setDebugValue(
-      enabledRules.map((rule) => ({
-        meta: {
-          enabledByUser: true,
-          createdAt: 0,
-        },
-        details: rule,
-      })),
-    );
+  const handleControlChange = (selectedForm: string) => {
+    setSelectedConfigForm(selectedForm);
   };
-
   return (
     <ErrorBoundary
       onError={(e) => alert(e.stack)}
-      fallback={<p>"Something went wrong"</p>}
+      fallback={
+        <Callout.Root style={{ height: "100%" }} color="red">
+          Something went wrong
+        </Callout.Root>
+      }
     >
-      <Tabs.Root className={styles.Dashboard} defaultValue="redirect-rules">
-        {lastError && (
-          <Flex p="1">
-            <Callout.Root size={"1"} color="ruby">
-              {lastError}
-            </Callout.Root>
-          </Flex>
-        )}
-
-        <Tabs.List size="1">
-          <Tabs.Trigger value="redirect-rules">Redirects</Tabs.Trigger>
-          <Tabs.Trigger value="debug">Debug</Tabs.Trigger>
-        </Tabs.List>
-        <Tabs.Content className={styles.TabsContent} value="debug">
-          {debugValue?.map?.((rule: RedirectRule) => {
-            return <RuleCard rule={rule} onClick={() => {}} />;
-          })}
-        </Tabs.Content>
-        <Tabs.Content className={styles.TabsContent} value="redirect-rules">
-          <Flex height={"100%"} direction="column" flexGrow={"1"}>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-              }}
-            >
-              <Box>
-                <RedirectRuleForm form={form} />
+      {lastError && (
+        <Flex p="1">
+          <Callout.Root size={"1"} color="ruby">
+            {lastError}
+          </Callout.Root>
+        </Flex>
+      )}
+      <Box p="2">
+        <SegmentedControl.Root
+          onValueChange={handleControlChange}
+          size="1"
+          value={selectedConfigForm}
+        >
+          <SegmentedControl.Item value="redirect-rules">
+            Redirects
+          </SegmentedControl.Item>
+          <SegmentedControl.Item value="headers">Headers</SegmentedControl.Item>
+        </SegmentedControl.Root>
+      </Box>
+      <Flex height={"100%"} direction="column" flexGrow={"1"}>
+        <form>
+          {selectedConfigForm === "redirect-rules" ? (
+            <RedirectRuleForm form={form} />
+          ) : (
+            <HeaderForm form={form} />
+          )}
+        </form>
+      </Flex>
+      <Separator size={"4"} my="1" />
+      <DashboardControls
+        ruleCount={displayedRules.length}
+        allPaused={!!allPaused}
+        onResumeAllRules={handleAllResumed}
+        onPauseAllRules={handleAllPaused}
+        onDeleteAllRules={deleteAllRulesInStorage}
+      />
+      <Separator size={"4"} my="1" />
+      <Flex
+        width="100%"
+        p="1"
+        flexGrow={"1"}
+        direction={"column"}
+        wrap="wrap"
+        justify={"between"}
+      >
+        {showRules &&
+          rulesSortedByCreationTime()?.map((rule) => {
+            return (
+              <Box width={"100%"} p="1" className={styles.RuleCardContainer}>
+                <RuleCard rule={rule} />{" "}
               </Box>
-            </form>
-            <Separator size={"4"} my="1" />
-            <DashboardControls
-              ruleCount={displayedRules.length}
-              allPaused={!!allPaused}
-              onSyncAllRules={handleSyncAllRules}
-              onResumeAllRules={handleAllResumed}
-              onPauseAllRules={handleAllPaused}
-              onDeleteAllRules={deleteAllRulesInStorage}
-            />
-            <Separator size={"4"} my="1" />
-            <Flex p="1" flexGrow={"1"} direction={"column"} justify={"between"}>
-              <Flex gap="1" direction="column-reverse">
-                {showRules &&
-                  displayedRules?.map((rule) => {
-                    return <RuleCard rule={rule} onClick={() => {}} />;
-                  })}
-              </Flex>
-            </Flex>
-          </Flex>
-        </Tabs.Content>
-      </Tabs.Root>
+            );
+          })}
+      </Flex>
     </ErrorBoundary>
   );
 };

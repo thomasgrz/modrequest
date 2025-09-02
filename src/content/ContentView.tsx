@@ -38,11 +38,7 @@ export const ContentView = () => {
             className={show ? styles.DisplayedRules : styles.HiddenRules}
           >
             {displayedRules?.map?.((rule) => (
-              <RuleCard
-                key={rule.details.id}
-                rule={rule}
-                onClick={() => console.log("")}
-              />
+              <RuleCard key={rule.details.id} rule={rule} />
             ))}
           </div>
           <Separator.Root />

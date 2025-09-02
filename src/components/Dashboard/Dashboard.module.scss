@@ -5,7 +5,14 @@
 }
 
 .Dashboard {
-  // height: 100dvh;
+  .RuleCardContainer {
+    width: 100%;
+  }
+  @media screen and (min-width: 500px) {
+    .RuleCardContainer {
+      width: 50%;
+    }
+  }
 }
 
 .RedirecRulesContainer {
