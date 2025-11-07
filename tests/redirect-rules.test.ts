@@ -16,7 +16,7 @@ const createRedirectRule = async (arg: {
   await page.getByText("Add config").click();
 };
 
-test("should apply redirect rule", async ({ page, extensionId }) => {
+test("should apply redirect rule", async ({ page }) => {
   await createRedirectRule({
     page,
     source: ".*something.*",
@@ -27,8 +27,7 @@ test("should apply redirect rule", async ({ page, extensionId }) => {
   await expect(page.getByText(/Example Domain/)).toBeVisible();
 });
 
-test("should not apply paused redirect rule", async ({ page, extensionId }) => {
-  console.log("Extension ID:", extensionId);
+test("should not apply paused redirect rule", async ({ page }) => {
   await createRedirectRule({
     page,
     source: ".*something.*",

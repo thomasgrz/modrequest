@@ -16,7 +16,7 @@ const createHeaderRule = async (arg: {
   await page.getByText("Add config").click();
 };
 
-test("should apply header rule", async ({ page, extensionId }) => {
+test("should apply header rule", async ({ page }) => {
   // Create a header modification rule
   await createHeaderRule({
     page,

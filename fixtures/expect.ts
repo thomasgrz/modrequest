@@ -17,14 +17,5 @@ export const test = base.extend<{
     await use(context);
     await context.close();
   },
-  extensionId: async ({ context }, use) => {
-    // for manifest v3:
-    let [serviceWorker] = context.serviceWorkers();
-    if (!serviceWorker)
-      serviceWorker = await context.waitForEvent("serviceworker");
-
-    const extensionId = serviceWorker.url().split("/")[2];
-    await use(extensionId);
-  },
 });
 export const expect = test.expect;
