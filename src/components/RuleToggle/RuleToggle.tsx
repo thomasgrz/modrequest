@@ -13,7 +13,7 @@ export const RuleToggle = ({
   onResumeClick: () => void;
 }) => {
   return (
-    <Box>
+    <Box data-testid={`${isPaused ? "play" : "pause"}-rule-toggle`}>
       {isPaused ? (
         <Tooltip
           content={disabled ? "rule cannot be enabled due to error" : "resume"}
