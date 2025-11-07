@@ -1,1 +1,0 @@
-const r=async()=>(await chrome.storage.local.get("rules")).rules??[],t=(e,o)=>console.info("[modrequest]: ",e,o),a=e=>chrome.storage.local.onChanged.addListener(o=>{if(o.rules){const s=o.rules;e(s)}});export{r as g,t as l,a as s};

@@ -1,1 +1,0 @@
-import{j as t,R as r,D as o,c as s,r as n}from"./Dashboard-BkRO71KC.js";import"./subscribeToRuleChanges-DxDFSGwk.js";function c(){return t.jsx(r,{radius:"full",children:t.jsx(o,{})})}const e=document.getElementById("root");e instanceof HTMLElement&&s.createRoot(e).render(t.jsx(n.StrictMode,{children:t.jsx(c,{})}));
