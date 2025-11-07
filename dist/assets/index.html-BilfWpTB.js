@@ -1,0 +1,1 @@
+import{j as s,R as t,D as e,c as o,r}from"./Dashboard-BkRO71KC.js";import"./subscribeToRuleChanges-DxDFSGwk.js";const a={},c=()=>s.jsx(t,{className:a["pseudo-root"],radius:"full",children:s.jsx(e,{showRules:!1})});o.createRoot(document.getElementById("root")).render(s.jsx(r.StrictMode,{children:s.jsx(c,{})}));

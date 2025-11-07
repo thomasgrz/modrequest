@@ -6,7 +6,10 @@ export const test = base.extend<{
   extensionId: string;
 }>({
   context: async ({}, use) => {
-    const pathToExtension = path.join(import.meta.dirname, "../dist");
+    const pathToExtension = path.join(
+      import.meta.dirname,
+      "../src/crx-interpolate-1.0.0.zip",
+    );
     const context = await chromium.launchPersistentContext("", {
       channel: "chromium",
       args: [
@@ -17,5 +20,14 @@ export const test = base.extend<{
     await use(context);
     await context.close();
   },
+  // extensionId: async ({ context }, use) => {
+  //   // for manifest v3:
+  //   let [serviceWorker] = context.serviceWorkers();
+  //   if (!serviceWorker)
+  //     serviceWorker = await context.waitForEvent("serviceworker");
+
+  //   const extensionId = serviceWorker.url().split("/")[2];
+  //   await use(extensionId);
+  // },
 });
 export const expect = test.expect;
