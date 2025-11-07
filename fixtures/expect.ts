@@ -6,10 +6,7 @@ export const test = base.extend<{
   extensionId: string;
 }>({
   context: async ({}, use) => {
-    const pathToExtension = path.join(
-      import.meta.dirname,
-      "../src/crx-interpolate-1.0.0.zip",
-    );
+    const pathToExtension = path.join(import.meta.dirname, "../dist");
     const context = await chromium.launchPersistentContext("", {
       channel: "chromium",
       args: [
