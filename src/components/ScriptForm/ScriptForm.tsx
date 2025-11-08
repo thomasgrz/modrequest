@@ -17,8 +17,8 @@ export const ScriptForm = withForm({
           <form.AppField validators={validators} name="script">
             {(field) => (
               <field.TextArea
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
+                label="Script"
+                htmlFor="script"
                 placeholder="console.log(something);"
               />
             )}

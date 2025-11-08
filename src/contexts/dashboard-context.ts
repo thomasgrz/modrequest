@@ -6,5 +6,6 @@ export const dashboardFormOptions = formOptions({
     destination: "",
     headerKey: "",
     headerValue: "",
+    script: "",
   },
 });

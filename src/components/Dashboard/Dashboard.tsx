@@ -31,6 +31,7 @@ const createRedirectRule = (rule: {
   destination: string;
 }): RedirectRule => {
   return {
+    type: "redirect",
     meta: {
       enabledByUser: true,
       createdAt: new Date().getTime(),
@@ -56,6 +57,7 @@ const createHeaderRule = (rule: {
   headerValue: string;
 }): RequestHeaderRule => {
   return {
+    type: "header",
     meta: {
       enabledByUser: true,
       createdAt: new Date().getTime(),
@@ -92,7 +94,9 @@ const createHeaderRule = (rule: {
 };
 
 export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
-  const [displayedRules, setDisplayedRules] = useState<RedirectRule[]>([]);
+  const [displayedRules, setDisplayedRules] = useState<
+    (RedirectRule | RequestHeaderRule)[]
+  >([]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [allPaused, setAllPaused] = useState<boolean | null>(null);
   const [selectedConfigForm, setSelectedConfigForm] =
@@ -110,7 +114,6 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         addRulesInStorage([createRedirectRule(value)]);
         return;
       }
-      debugger;
       if (meta.submitAction === "add-header") {
         addRulesInStorage([createHeaderRule(value)]);
         return;
@@ -156,15 +159,17 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   const handleAllPaused = async () => {
     const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map((rule: RedirectRule) => {
-      return {
-        ...rule,
-        meta: {
-          ...rule.meta,
-          enabledByUser: false,
-        },
-      };
-    });
+    const pausedRules = rulesInStorage.map(
+      (rule: RedirectRule | RequestHeaderRule) => {
+        return {
+          ...rule,
+          meta: {
+            ...rule.meta,
+            enabledByUser: false,
+          },
+        };
+      },
+    );
 
     chrome.storage.local.set({
       rules: pausedRules,
@@ -175,15 +180,17 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   const handleAllResumed = async () => {
     const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map((rule: RedirectRule) => {
-      return {
-        ...rule,
-        meta: {
-          ...rule.meta,
-          enabledByUser: true,
-        },
-      };
-    });
+    const pausedRules = rulesInStorage.map(
+      (rule: RedirectRule | RequestHeaderRule) => {
+        return {
+          ...rule,
+          meta: {
+            ...rule.meta,
+            enabledByUser: true,
+          },
+        };
+      },
+    );
 
     chrome.storage.local.set({
       rules: pausedRules,
@@ -201,68 +208,72 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
     setSelectedConfigForm(selectedForm);
   };
   return (
-    <ErrorBoundary
-      onError={(e) => alert(e.stack)}
-      fallback={
-        <Callout.Root style={{ height: "100%" }} color="red">
-          Something went wrong
-        </Callout.Root>
-      }
-    >
-      {lastError && (
-        <Flex p="1">
-          <Callout.Root size={"1"} color="ruby">
-            {lastError}
+    <Box height="100%" className={styles.DashboardContainer}>
+      <ErrorBoundary
+        onError={(e) => alert(e.stack)}
+        fallback={
+          <Callout.Root style={{ height: "100%" }} color="red">
+            Something went wrong
           </Callout.Root>
-        </Flex>
-      )}
-      <Box p="2">
-        <SegmentedControl.Root
-          onValueChange={handleControlChange}
-          size="1"
-          value={selectedConfigForm}
-        >
-          <SegmentedControl.Item value="redirect-rules">
-            Redirects
-          </SegmentedControl.Item>
-          <SegmentedControl.Item value="headers">Headers</SegmentedControl.Item>
-        </SegmentedControl.Root>
-      </Box>
-      <Flex height={"100%"} direction="column" flexGrow={"1"}>
-        <form>
-          {selectedConfigForm === "redirect-rules" ? (
-            <RedirectRuleForm form={form} />
-          ) : (
-            <HeaderForm form={form} />
-          )}
-        </form>
-      </Flex>
-      <Separator size={"4"} my="1" />
-      <DashboardControls
-        ruleCount={displayedRules.length}
-        allPaused={!!allPaused}
-        onResumeAllRules={handleAllResumed}
-        onPauseAllRules={handleAllPaused}
-        onDeleteAllRules={deleteAllRulesInStorage}
-      />
-      <Separator size={"4"} my="1" />
-      <Flex
-        width="100%"
-        p="1"
-        flexGrow={"1"}
-        direction={"column"}
-        wrap="wrap"
-        justify={"between"}
+        }
       >
-        {showRules &&
-          rulesSortedByCreationTime()?.map((rule) => {
-            return (
-              <Box width={"100%"} p="1" className={styles.RuleCardContainer}>
-                <RuleCard rule={rule} />{" "}
-              </Box>
-            );
-          })}
-      </Flex>
-    </ErrorBoundary>
+        {lastError && (
+          <Flex p="1">
+            <Callout.Root size={"1"} color="ruby">
+              {lastError}
+            </Callout.Root>
+          </Flex>
+        )}
+        <Box p="2">
+          <SegmentedControl.Root
+            onValueChange={handleControlChange}
+            size="1"
+            value={selectedConfigForm}
+          >
+            <SegmentedControl.Item value="redirect-rules">
+              Redirects
+            </SegmentedControl.Item>
+            <SegmentedControl.Item value="headers">
+              Headers
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+        </Box>
+        <Flex height={"100%"} direction="column" flexGrow={"1"}>
+          <form>
+            {selectedConfigForm === "redirect-rules" ? (
+              <RedirectRuleForm form={form} />
+            ) : (
+              <HeaderForm form={form} />
+            )}
+          </form>
+        </Flex>
+        <Separator size={"4"} my="1" />
+        <DashboardControls
+          ruleCount={displayedRules.length}
+          allPaused={!!allPaused}
+          onResumeAllRules={handleAllResumed}
+          onPauseAllRules={handleAllPaused}
+          onDeleteAllRules={deleteAllRulesInStorage}
+        />
+        <Separator size={"4"} my="1" />
+        <Flex
+          width="100%"
+          p="1"
+          flexGrow={"1"}
+          direction={"column"}
+          wrap="wrap"
+          justify={"between"}
+        >
+          {showRules &&
+            rulesSortedByCreationTime()?.map((rule) => {
+              return (
+                <Box width={"100%"} p="1" className={styles.RuleCardContainer}>
+                  <RuleCard rule={rule} />{" "}
+                </Box>
+              );
+            })}
+        </Flex>
+      </ErrorBoundary>
+    </Box>
   );
 };
