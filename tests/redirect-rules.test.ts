@@ -1,4 +1,5 @@
 import { Page } from "@playwright/test";
+import { http, HttpResponse } from "msw";
 import { expect, test } from "../fixtures/expect.js";
 
 const createRedirectRule = async (arg: {
@@ -16,7 +17,14 @@ const createRedirectRule = async (arg: {
   await page.getByText("Add config").click();
 };
 
-test("should apply redirect rule", async ({ page }) => {
+test("should apply redirect rule", async ({ page, network }) => {
+  network.use(
+    http.get("https://example.com/*", (args) => {
+      return HttpResponse.text(
+        `<html><body><h1>Example Domain</h1></body></html>`,
+      );
+    }),
+  );
   await createRedirectRule({
     page,
     source: ".*something.*",

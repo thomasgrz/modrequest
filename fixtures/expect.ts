@@ -1,10 +1,16 @@
+import { createNetworkFixture, type NetworkFixture } from "@msw/playwright";
 import { test as base, chromium, type BrowserContext } from "@playwright/test";
 import path from "path";
 
 export const test = base.extend<{
   context: BrowserContext;
   extensionId: string;
+  network: NetworkFixture;
 }>({
+  // Create a fixture that will control the network in your tests.
+  network: createNetworkFixture({
+    initialHandlers: [],
+  }),
   context: async ({}, use) => {
     const pathToExtension = path.join(import.meta.dirname, "../dist");
     const context = await chromium.launchPersistentContext("", {
@@ -17,14 +23,14 @@ export const test = base.extend<{
     await use(context);
     await context.close();
   },
-  // extensionId: async ({ context }, use) => {
-  //   // for manifest v3:
-  //   let [serviceWorker] = context.serviceWorkers();
-  //   if (!serviceWorker)
-  //     serviceWorker = await context.waitForEvent("serviceworker");
+  extensionId: async ({ context }, use) => {
+    // for manifest v3:
+    let [serviceWorker] = context.serviceWorkers();
+    if (!serviceWorker)
+      serviceWorker = await context.waitForEvent("serviceworker");
 
-  //   const extensionId = serviceWorker.url().split("/")[2];
-  //   await use(extensionId);
-  // },
+    const extensionId = serviceWorker.url().split("/")[2];
+    await use(extensionId);
+  },
 });
 export const expect = test.expect;

@@ -4,10 +4,12 @@ const createHeaderRule = async (arg: {
   page: any;
   headerName: string;
   headerValue: string;
+  extensionId: string;
 }) => {
   const { headerName, headerValue, page } = arg;
+  console.log({ extensionId: arg.extensionId });
   await page.goto(
-    `chrome-extension://ejgfblbiaaajjignebpjnjegobenjmno/src/options/index.html`,
+    `chrome-extension://${arg.extensionId}/src/options/index.html`,
   );
 
   await page.getByRole("radio", { name: "Headers" }).click();
@@ -16,28 +18,37 @@ const createHeaderRule = async (arg: {
   await page.getByText("Add config").click();
 };
 
-test("should apply header rule", async ({ page }) => {
+test("should apply header rule", async ({ page, extensionId, network }) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
     headerName: "X-Test-Header",
     headerValue: "ModRequest",
+    extensionId,
   });
 
+  page.on("request", (request) => {
+    console.log(">>", request.headers());
+  });
   // Navigate to a test page
   await page.goto("https://httpbin.org/headers");
+  await page.setExtraHTTPHeaders({ test: "header" });
 
   // Verify that the header has been added
   const headerContent = await page.locator("pre").innerText();
   expect(headerContent).toContain('"X-Test-Header": "ModRequest"');
 });
 
-test("should not apply header rule when paused", async ({ page }) => {
+test("should not apply header rule when paused", async ({
+  page,
+  extensionId,
+}) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
     headerName: "X-Test-Header",
     headerValue: "ModRequest",
+    extensionId,
   });
 
   // Pause the header rule
@@ -51,18 +62,23 @@ test("should not apply header rule when paused", async ({ page }) => {
   expect(headerContent).not.toContain('"X-Test-Header": "ModRequest"');
 });
 
-test("should selectively apply header rule if enabled", async ({ page }) => {
+test("should selectively apply header rule if enabled", async ({
+  page,
+  extensionId,
+}) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
     headerName: "X-Test-Header",
     headerValue: "ModRequest",
+    extensionId,
   });
 
   await createHeaderRule({
     page,
     headerName: "X-Another-Header",
     headerValue: "ShouldNotApply",
+    extensionId,
   });
 
   // Pause the second header rule
@@ -82,18 +98,21 @@ test("should selectively apply header rule if enabled", async ({ page }) => {
 
 test("should disable all header rules when global pause is activated", async ({
   page,
+  extensionId,
 }) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
     headerName: "X-Test-Header",
     headerValue: "ModRequest",
+    extensionId,
   });
 
   await createHeaderRule({
     page,
     headerName: "X-Another-Header",
     headerValue: "ShouldNotApply",
+    extensionId,
   });
 
   // Activate global pause
@@ -109,18 +128,21 @@ test("should disable all header rules when global pause is activated", async ({
 
 test("should re-enable header rules when global pause is deactivated", async ({
   page,
+  extensionId,
 }) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
     headerName: "X-Test-Header",
     headerValue: "ModRequest",
+    extensionId,
   });
 
   await createHeaderRule({
     page,
     headerName: "X-Another-Header",
     headerValue: "ShouldNotApply",
+    extensionId,
   });
 
   // Activate global pause
