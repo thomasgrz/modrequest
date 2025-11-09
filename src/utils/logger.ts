@@ -1,2 +1,2 @@
-export const logger = (msg: string, data: unknown) =>
+export const logger = (msg: string, data?: unknown) =>
   console.info("[modrequest]: ", msg, data);

@@ -18,7 +18,7 @@ export const RedirectRuleForm = withForm({
             <Flex direction={"row"}>
               <form.AppField
                 validators={validators}
-                name="source"
+                name="redirectRuleForm.source"
                 children={(field) => (
                   <field.TextField
                     placeholder="Example: https://example.com/(.*)"
@@ -30,7 +30,7 @@ export const RedirectRuleForm = withForm({
             </Flex>
             <form.AppField
               validators={validators}
-              name="destination"
+              name="redirectRuleForm.destination"
               children={(field) => (
                 <field.TextField
                   placeholder="Example: https://google.com/$1"
@@ -43,9 +43,9 @@ export const RedirectRuleForm = withForm({
           <Flex flexGrow={"1"} justify={"end"}>
             <Button
               onClick={() =>
-                form.handleSubmit({ submitAction: "redirect-rule" })
+                form.handleSubmit({ submitAction: "add-redirect" })
               }
-              type="submit"
+              type="button"
               size="1"
             >
               <CardAddIcon />

@@ -10,12 +10,15 @@ import {
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { addRulesInStorage } from "@/utils/addRulesInStorage/addRulesInStorage";
-import { deleteAllRulesInStorage } from "@/utils/deleteAllRulesInStorage/deleteAllRulesInStorage";
-import { generateRuleId } from "@/utils/generateRedirectRuleId";
-import { getRulesFromStorage } from "@/utils/getRulesFromStorage/getRulesFromStorage";
+import { addRulesInStorage } from "@/utils/dynamicRules/addRulesInStorage/addRulesInStorage";
+import { createHeaderRule } from "@/utils/dynamicRules/createHeaderRule/createHeaderRule";
+import { createRedirectRule } from "@/utils/dynamicRules/createRedirectRule/createRedirectRule";
+import { deleteAllRulesInStorage } from "@/utils/dynamicRules/deleteAllRulesInStorage/deleteAllRulesInStorage";
+import { getRulesFromStorage } from "@/utils/dynamicRules/getRulesFromStorage/getRulesFromStorage";
+import { subscribeToRuleChanges } from "@/utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
 import { logger } from "@/utils/logger";
-import { subscribeToRuleChanges } from "@/utils/subscribeToRuleChanges/subscribeToRuleChanges";
+import { addScriptsInStorage } from "@/utils/userScripts/addScriptsInStorage/addScriptsInStorage";
+import { createScript } from "@/utils/userScripts/createScript/createScript";
 import { DashboardControls } from "../DashboardControls/DashboardControls";
 import { HeaderForm } from "../HeaderForm/HeaderForm";
 import { RedirectRuleForm } from "../RedirectRuleForm/RedirectRuleForm";
@@ -24,79 +27,43 @@ import {
   RequestHeaderRule,
   RuleCard,
 } from "../RuleCard/RuleCard";
+import { ScriptForm } from "../ScriptForm/ScriptForm";
 import styles from "./Dashboard.module.scss";
 
-const createRedirectRule = (rule: {
-  source: string;
-  destination: string;
-}): RedirectRule => {
-  return {
-    meta: {
-      enabledByUser: true,
-      createdAt: new Date().getTime(),
-    },
-    details: {
-      action: {
-        type: "redirect",
-        redirect: {
-          url: rule.destination,
-        },
-      },
-      condition: {
-        resourceTypes: ["main_frame"],
-        regexFilter: rule.source,
-      },
-      id: generateRuleId(),
-    },
-  };
-};
-
-const createHeaderRule = (rule: {
-  headerKey: string;
-  headerValue: string;
-}): RequestHeaderRule => {
-  return {
-    meta: {
-      enabledByUser: true,
-      createdAt: new Date().getTime(),
-    },
-    details: {
-      action: {
-        type: "modifyHeaders",
-        requestHeaders: [
-          {
-            header: rule.headerKey,
-            operation: "set",
-            value: rule.headerValue,
-          },
-        ],
-      },
-      condition: {
-        resourceTypes: [
-          "sub_frame",
-          "font",
-          "main_frame",
-          "xmlhttprequest",
-          "script",
-          "image",
-          "webbundle",
-          "media",
-          "other",
-          "object",
-        ],
-        regexFilter: ".*",
-      },
-      id: generateRuleId(),
-    },
-  };
-};
-
 export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
-  const [displayedRules, setDisplayedRules] = useState<RedirectRule[]>([]);
+  const [displayedRules, setDisplayedRules] = useState<
+    (RedirectRule | RequestHeaderRule)[]
+  >([]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [allPaused, setAllPaused] = useState<boolean | null>(null);
-  const [selectedConfigForm, setSelectedConfigForm] =
-    useState("redirect-rules");
+  const [defaultForm, setDefaultForm] = useState<string | null>(null);
+  const [selectedConfigForm, setSelectedConfigForm] = useState<string | null>(
+    null,
+  );
+
+  const INTERPOLATE_SELECTED_FORM_KEY = "interpolate-selected-form";
+  useEffect(() => {
+    logger("Dashboard mounted", {});
+    const handleDefaultSelection = async () => {
+      const initialSelectedForm = await chrome.storage.local.get(
+        INTERPOLATE_SELECTED_FORM_KEY,
+      );
+      if (initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY]) {
+        logger(
+          "Initial selected form:",
+          initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY],
+        );
+        setDefaultForm(initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY]);
+      }
+    };
+    handleDefaultSelection();
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.set({
+      [INTERPOLATE_SELECTED_FORM_KEY]: selectedConfigForm,
+    });
+  }, [selectedConfigForm]);
 
   const form = useAppForm({
     ...dashboardFormOptions,
@@ -105,14 +72,33 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       submitAction: null,
     },
     onSubmit: async ({ value, meta }) => {
-      logger(`Selected action - ${meta.submitAction}`, value);
-      if (meta.submitAction === "redirect-rule") {
-        addRulesInStorage([createRedirectRule(value)]);
+      logger(`Selected action - ${meta?.submitAction}`, value);
+      if (meta.submitAction === "add-redirect") {
+        addRulesInStorage([
+          createRedirectRule({
+            source: value.redirectRuleForm.source,
+            destination: value.redirectRuleForm.destination,
+          }),
+        ]);
         return;
       }
-      debugger;
       if (meta.submitAction === "add-header") {
-        addRulesInStorage([createHeaderRule(value)]);
+        addRulesInStorage([
+          createHeaderRule({
+            headerKey: value.headerRuleForm.key,
+            headerValue: value.headerRuleForm.value,
+          }),
+        ]);
+        return;
+      }
+      if (meta.submitAction === "create-script") {
+        addScriptsInStorage([
+          createScript({
+            id: value.scriptForm.id,
+            body: value.scriptForm.body,
+            include: value.scriptForm.include,
+          }),
+        ]);
         return;
       }
     },
@@ -156,15 +142,17 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   const handleAllPaused = async () => {
     const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map((rule: RedirectRule) => {
-      return {
-        ...rule,
-        meta: {
-          ...rule.meta,
-          enabledByUser: false,
-        },
-      };
-    });
+    const pausedRules = rulesInStorage.map(
+      (rule: RedirectRule | RequestHeaderRule) => {
+        return {
+          ...rule,
+          meta: {
+            ...rule.meta,
+            enabledByUser: false,
+          },
+        };
+      },
+    );
 
     chrome.storage.local.set({
       rules: pausedRules,
@@ -175,15 +163,17 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   const handleAllResumed = async () => {
     const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map((rule: RedirectRule) => {
-      return {
-        ...rule,
-        meta: {
-          ...rule.meta,
-          enabledByUser: true,
-        },
-      };
-    });
+    const pausedRules = rulesInStorage.map(
+      (rule: RedirectRule | RequestHeaderRule) => {
+        return {
+          ...rule,
+          meta: {
+            ...rule.meta,
+            enabledByUser: true,
+          },
+        };
+      },
+    );
 
     chrome.storage.local.set({
       rules: pausedRules,
@@ -200,9 +190,12 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   const handleControlChange = (selectedForm: string) => {
     setSelectedConfigForm(selectedForm);
   };
+
+  const displayedForm = selectedConfigForm ?? defaultForm ?? "redirect-rules";
+
   return (
     <ErrorBoundary
-      onError={(e) => alert(e.stack)}
+      onError={console.error}
       fallback={
         <Callout.Root style={{ height: "100%" }} color="red">
           Something went wrong
@@ -216,25 +209,33 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
           </Callout.Root>
         </Flex>
       )}
+      {lastError && (
+        <Flex p="1">
+          <Callout.Root size={"1"} color="ruby">
+            {lastError}
+          </Callout.Root>
+        </Flex>
+      )}
       <Box p="2">
         <SegmentedControl.Root
           onValueChange={handleControlChange}
           size="1"
-          value={selectedConfigForm}
+          value={selectedConfigForm ?? defaultForm ?? "redirect-rules"}
         >
           <SegmentedControl.Item value="redirect-rules">
             Redirects
           </SegmentedControl.Item>
           <SegmentedControl.Item value="headers">Headers</SegmentedControl.Item>
+          <SegmentedControl.Item value="scripts">Scripts</SegmentedControl.Item>
         </SegmentedControl.Root>
       </Box>
       <Flex height={"100%"} direction="column" flexGrow={"1"}>
         <form>
-          {selectedConfigForm === "redirect-rules" ? (
+          {displayedForm === "redirect-rules" && (
             <RedirectRuleForm form={form} />
-          ) : (
-            <HeaderForm form={form} />
           )}
+          {displayedForm === "headers" && <HeaderForm form={form} />}
+          {displayedForm === "scripts" && <ScriptForm form={form} />}
         </form>
       </Flex>
       <Separator size={"4"} my="1" />

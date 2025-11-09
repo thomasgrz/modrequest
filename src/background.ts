@@ -1,7 +1,9 @@
-import { getRulesFromStorage } from "./utils/getRulesFromStorage/getRulesFromStorage";
+import { getRulesFromStorage } from "./utils/dynamicRules/getRulesFromStorage/getRulesFromStorage";
+import { subscribeToRuleChanges } from "./utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
+import { syncDynamicRulesInStorage } from "./utils/dynamicRules/syncDynamicRulesInStorage/syncDynamicRulesInStorage";
 import { logger } from "./utils/logger";
-import { subscribeToRuleChanges } from "./utils/subscribeToRuleChanges/subscribeToRuleChanges";
-import { syncDynamicRulesInStorage } from "./utils/syncDynamicRulesInStorage/syncDynamicRulesInStorage";
+import { subscribeToUserScriptChanges } from "./utils/userScripts/subscribeToUserScriptChanges/subscribeToUserScriptChanges";
+import { syncUserScriptsInStorage } from "./utils/userScripts/syncUserScriptsInStorage/syncUserScriptsInStorage";
 
 logger("service worker installed", {});
 
@@ -12,7 +14,7 @@ chrome.sidePanel
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "openSidePanel",
-    title: "Open ModRequest",
+    title: "Open Interpolate panel",
     contexts: ["all"],
   });
 
@@ -20,6 +22,10 @@ chrome.runtime.onInstalled.addListener(() => {
   subscribeToRuleChanges(() => {
     logger("updated from background.ts", {});
     syncDynamicRulesInStorage();
+  });
+  subscribeToUserScriptChanges(() => {
+    logger("updated from background.ts - user scripts", {});
+    syncUserScriptsInStorage();
   });
 });
 

@@ -1,5 +1,5 @@
+import { logger } from "../../logger";
 import { getRulesFromStorage } from "../getRulesFromStorage/getRulesFromStorage";
-import { logger } from "../logger";
 
 export const syncDynamicRulesInStorage = async () => {
   // Get the rules explicitly create/managed by the extension in storage

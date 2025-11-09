@@ -7,7 +7,6 @@ const createHeaderRule = async (arg: {
   extensionId: string;
 }) => {
   const { headerName, headerValue, page } = arg;
-  console.log({ extensionId: arg.extensionId });
   await page.goto(
     `chrome-extension://${arg.extensionId}/src/options/index.html`,
   );
@@ -27,12 +26,8 @@ test("should apply header rule", async ({ page, extensionId, network }) => {
     extensionId,
   });
 
-  page.on("request", (request) => {
-    console.log(">>", request.headers());
-  });
   // Navigate to a test page
   await page.goto("https://httpbin.org/headers");
-  await page.setExtraHTTPHeaders({ test: "header" });
 
   // Verify that the header has been added
   const headerContent = await page.locator("pre").innerText();

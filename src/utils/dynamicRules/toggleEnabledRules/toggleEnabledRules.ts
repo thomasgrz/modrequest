@@ -3,8 +3,8 @@ import {
   RequestHeaderRule,
 } from "@/components/RuleCard/RuleCard";
 import { ScriptInterpolation } from "@/components/ScriptConfig/ScriptConfig";
-import { getRulesFromStorage } from "../getRulesFromStorage/getRulesFromStorage";
-import { getUserScriptsFromStorage } from "../getUserScriptsFromStorage/getUserScriptsFromStorage";
+import { getRulesFromStorage } from "../dynamicRules/getRulesFromStorage/getRulesFromStorage";
+import { getUserScriptsFromStorage } from "../dynamicRules/getUserScriptsFromStorage/getUserScriptsFromStorage";
 
 export const toggleEnabledRules = async (
   rules: (RedirectRule | RequestHeaderRule | ScriptInterpolation)[],

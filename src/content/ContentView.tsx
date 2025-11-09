@@ -1,5 +1,5 @@
 import { RedirectRule, RuleCard } from "@/components/RuleCard/RuleCard";
-import { subscribeToRuleChanges } from "@/utils/subscribeToRuleChanges/subscribeToRuleChanges";
+import { subscribeToRuleChanges } from "@/utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
 import { Box, Button, Flex, IconButton, Theme } from "@radix-ui/themes";
 import { Separator } from "radix-ui";
 import { useEffect, useState } from "react";

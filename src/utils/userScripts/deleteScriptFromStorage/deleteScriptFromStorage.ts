@@ -1,4 +1,4 @@
-import { getUserScriptsFromStorage } from "../getUserScriptsFromStorage/getUserScriptsFromStorage";
+import { getUserScriptsFromStorage } from "../../dynamicRules/getUserScriptsFromStorage/getUserScriptsFromStorage";
 
 export const deleteScriptFromStroage = async (ids: string[]) => {
   const currentScripts = await getUserScriptsFromStorage();

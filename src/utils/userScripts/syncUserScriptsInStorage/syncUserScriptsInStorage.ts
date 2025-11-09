@@ -1,8 +1,9 @@
-import { getRulesFromStorage } from "../getRulesFromStorage/getRulesFromStorage";
-import { getUserScriptsFromStorage } from "../getUserScriptsFromStorage/getUserScriptsFromStorage";
-import { logger } from "../logger";
+import { getRulesFromStorage } from "../../dynamicRules/getRulesFromStorage/getRulesFromStorage";
+import { getUserScriptsFromStorage } from "../../dynamicRules/getUserScriptsFromStorage/getUserScriptsFromStorage";
+import { logger } from "../../logger";
 
 export const syncUserScriptsInStorage = async () => {
+  logger("Syncing user scripts in storage...");
   // Get the rules explicitly create/managed by the extension in storage
   const userScriptsInStorage = await getUserScriptsFromStorage();
   // Get all the rules _associated_ with the extension from the browser
@@ -11,6 +12,9 @@ export const syncUserScriptsInStorage = async () => {
   const userScriptIdsFromBrowser = userScriptsFromBrowser.map(
     (rule) => rule.id,
   );
+
+  logger("User scripts in storage:", userScriptsInStorage);
+  logger("User scripts in browser:", userScriptsFromBrowser);
 
   // Find all the rules we _should_ enable in the browser
   const userScriptsMissingFromBrowser = userScriptsInStorage.filter(
@@ -26,6 +30,7 @@ export const syncUserScriptsInStorage = async () => {
   const registerScript = async (
     rule: chrome.userScripts.RegisteredUserScript,
   ) => {
+    logger("Registering user script:", rule);
     try {
       await chrome.userScripts.register([rule]);
     } catch (e) {
@@ -36,7 +41,7 @@ export const syncUserScriptsInStorage = async () => {
       if (!errorRuleId) return;
       const _currentScripts = await getRulesFromStorage();
       const _scriptsWithError = _currentScripts.map((rule) => {
-        if (rule.details.id === errorRuleId) {
+        if (rule.details?.id === errorRuleId) {
           return {
             ...rule,
             type: "script",
@@ -62,8 +67,10 @@ export const syncUserScriptsInStorage = async () => {
       .map(async (ruleDetails) => registerScript(ruleDetails)),
   );
 
+  logger("Finished registering missing user scripts.");
+
   const ruleIdsFromStorage = userScriptsInStorage.map(
-    (rule) => rule.details.id,
+    (rule) => rule?.details?.id,
   );
 
   // Find any associated rules in browser that arent mentioned
@@ -87,5 +94,8 @@ export const syncUserScriptsInStorage = async () => {
 
   await chrome.userScripts.unregister({ ids: removeUserScriptIds });
 
+  logger("Finished unregistering orphaned/disabled user scripts.", {
+    removeUserScriptIds,
+  });
   return;
 };

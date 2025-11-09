@@ -6,8 +6,6 @@ import {
   useFormContext,
 } from "../../contexts/form-context.ts";
 
-const TextField = lazy(() => import("../../components/TextField/TextField.js"));
-
 function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext();
   return (
@@ -19,7 +17,12 @@ function SubscribeButton({ label }: { label: string }) {
 
 export const { useAppForm, withForm, withFieldGroup } = createFormHook({
   fieldComponents: {
-    TextField,
+    TextField: lazy(() => import("../../components/TextField/TextField.js")),
+    TextArea: lazy(() =>
+      import("../../components/TextArea/TextArea.js").then((mod) => ({
+        default: mod.default,
+      })),
+    ),
   },
   formComponents: {
     SubscribeButton,

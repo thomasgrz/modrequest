@@ -27,7 +27,7 @@ export const ScriptConfig = ({ rule }: { rule: ScriptInterpolation }) => (
     </DataList.Item>
     <DataList.Item>
       <DataList.Label>Script:</DataList.Label>
-      {/* <DataList.Value>{rule?.details?.js[0]}</DataList.Value> */}
+      <DataList.Value>{rule?.details?.js[0].code}</DataList.Value>
     </DataList.Item>
     <DataList.Item>
       <DataList.Label>When:</DataList.Label>

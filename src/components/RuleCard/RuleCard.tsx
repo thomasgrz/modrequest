@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { deleteRuleById } from "@/utils/deleteRuleById/deleteRuleById";
-import { pauseRules } from "@/utils/pauseRules/pauseRules";
-import { resumeRules } from "@/utils/resumeRules/resumeRules";
-import { subscribeToRuleChanges } from "@/utils/subscribeToRuleChanges/subscribeToRuleChanges";
+import { deleteRuleById } from "@/utils/dynamicRules/deleteRuleById/deleteRuleById";
+import { pauseRules } from "@/utils/dynamicRules/pauseRules/pauseRules";
+import { resumeRules } from "@/utils/dynamicRules/resumeRules/resumeRules";
+import { subscribeToRuleChanges } from "@/utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
 import {
   DoubleArrowDownIcon,
   DoubleArrowUpIcon,
@@ -27,6 +27,7 @@ import { RuleToggle } from "../RuleToggle/RuleToggle";
 import styles from "./RuleCard.module.scss";
 
 export interface RedirectRule {
+  type: "redirect";
   meta: {
     enabledByUser?: boolean;
     createdAt: number;
@@ -36,6 +37,7 @@ export interface RedirectRule {
 }
 
 export interface RequestHeaderRule {
+  type: "headers";
   meta: {
     enabledByUser?: boolean;
     createdAt: number;
@@ -44,7 +46,11 @@ export interface RequestHeaderRule {
   details: chrome.declarativeNetRequest.Rule;
 }
 
-export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
+export const RuleCard = ({
+  rule,
+}: {
+  rule: RedirectRule | RequestHeaderRule;
+}) => {
   const [isPaused, setIsPaused] = useState(!rule?.meta?.enabledByUser);
   const [isOpen, setIsOpen] = useState(false);
   const [hit, setHit] = useState(false);
@@ -102,11 +108,8 @@ export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
         <Flex justify={"between"} flexGrow="2">
           <Box>
             <Flex>
-              {rule.details.action.type === "redirect" ? (
-                <RedirectRulePreview rule={rule} />
-              ) : (
-                <HeaderRulePreview rule={rule} />
-              )}
+              {rule.type === "redirect" && <RedirectRulePreview rule={rule} />}
+              {rule.type === "headers" && <HeaderRulePreview rule={rule} />}
             </Flex>
             <Flex py="1">
               {hit && !rule.meta.error && (
