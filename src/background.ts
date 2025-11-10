@@ -1,31 +1,30 @@
-import { getRulesFromStorage } from "./utils/dynamicRules/getRulesFromStorage/getRulesFromStorage";
-import { subscribeToRuleChanges } from "./utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
-import { syncDynamicRulesInStorage } from "./utils/dynamicRules/syncDynamicRulesInStorage/syncDynamicRulesInStorage";
 import { logger } from "./utils/logger";
-import { subscribeToUserScriptChanges } from "./utils/userScripts/subscribeToUserScriptChanges/subscribeToUserScriptChanges";
-import { syncUserScriptsInStorage } from "./utils/userScripts/syncUserScriptsInStorage/syncUserScriptsInStorage";
-
-logger("service worker installed", {});
+import { syncAllInterpolationsWithStorage } from "./utils/storage/syncAllInterpolationsWithStorage/syncAllInterpolationsWithStorage";
+import { getAllDynamicRuleInterpolationsFromStorage } from "./utils/storage/syncDynamicRuleInterpolationsWithStorage/syncDynamicRuleInterpolationsWithStorage";
+import { subscribeToInterpolations } from "./utils/subscription/subscribeToInterpolations/subscribeToInterpolations";
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
+  .then(() => logger("side panel behavior set (open on action click)"))
   .catch((error) => console.error(error));
 
 chrome.runtime.onInstalled.addListener(() => {
+  logger("service worker installed successfully");
+
   chrome.contextMenus.create({
     id: "openSidePanel",
     title: "Open Interpolate panel",
     contexts: ["all"],
   });
 
-  logger("installed", null);
-  subscribeToRuleChanges(() => {
-    logger("updated from background.ts", {});
-    syncDynamicRulesInStorage();
-  });
-  subscribeToUserScriptChanges(() => {
-    logger("updated from background.ts - user scripts", {});
-    syncUserScriptsInStorage();
+  subscribeToInterpolations(async () => {
+    logger("subscribeToInterpolations invoked from background.ts");
+    try {
+      await syncAllInterpolationsWithStorage();
+      logger("syncAllInterpolationsWithStorage invoked successfully");
+    } catch (e) {
+      logger("syncAllInterpolationsWithStorage resulted with error: ", e);
+    }
   });
 });
 
@@ -36,10 +35,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
+/**
+ * Listen for redirects so that we can inform the user interface
+ * to display some visual queue to the user that a redirect Interpolation
+ * was enforced during navigation or fetching.
+ */
 chrome.webRequest.onBeforeRedirect.addListener(
   async (details) => {
     const redirectUriIfExists = details?.redirectUrl;
-    const rulesFromStorage = await getRulesFromStorage();
+    const rulesFromStorage = await getAllDynamicRuleInterpolationsFromStorage();
+
     const redirectUrls = rulesFromStorage.map((rule) => ({
       id: rule?.details?.id,
       redirectUrl: rule?.details?.action?.redirect?.url,

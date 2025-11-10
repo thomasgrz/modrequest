@@ -10,30 +10,22 @@ import {
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { addRulesInStorage } from "@/utils/dynamicRules/addRulesInStorage/addRulesInStorage";
-import { createHeaderRule } from "@/utils/dynamicRules/createHeaderRule/createHeaderRule";
-import { createRedirectRule } from "@/utils/dynamicRules/createRedirectRule/createRedirectRule";
-import { deleteAllRulesInStorage } from "@/utils/dynamicRules/deleteAllRulesInStorage/deleteAllRulesInStorage";
-import { getRulesFromStorage } from "@/utils/dynamicRules/getRulesFromStorage/getRulesFromStorage";
-import { subscribeToRuleChanges } from "@/utils/dynamicRules/subscribeToRuleChanges/subscribeToRuleChanges";
+import { createHeaderInterpolation } from "@/utils/factories/createHeaderInterpolation/createHeaderInterpolation";
+import { createRedirectInterpolation } from "@/utils/factories/createRedirectInterpolation/createRedirectInterpolation";
+import { createScriptInterpolation } from "@/utils/factories/createScriptInterpolation/createScriptInterpolation";
+import { AnyInterpolation } from "@/utils/factories/Interpolation";
 import { logger } from "@/utils/logger";
-import { addScriptsInStorage } from "@/utils/userScripts/addScriptsInStorage/addScriptsInStorage";
-import { createScript } from "@/utils/userScripts/createScript/createScript";
+import { getInterpolationsFromStorage } from "@/utils/storage/getInterpolationsFromStorage/getInterpolationsFromStorage";
+import { INTERPOLATE_SELECTED_FORM_KEY } from "@/utils/storage/storage.constants";
+import { updateInterpolationsInStorage } from "@/utils/storage/updateInterpolationsInStorage/updateInterpolationsInStorage";
+import { subscribeToInterpolations } from "@/utils/subscription/subscribeToInterpolations/subscribeToInterpolations";
 import { DashboardControls } from "../DashboardControls/DashboardControls";
 import { HeaderForm } from "../HeaderForm/HeaderForm";
-import { RedirectRuleForm } from "../RedirectRuleForm/RedirectRuleForm";
-import {
-  RedirectRule,
-  RequestHeaderRule,
-  RuleCard,
-} from "../RuleCard/RuleCard";
 import { ScriptForm } from "../ScriptForm/ScriptForm";
 import styles from "./Dashboard.module.scss";
 
 export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
-  const [displayedRules, setDisplayedRules] = useState<
-    (RedirectRule | RequestHeaderRule)[]
-  >([]);
+  const [displayedRules, setDisplayedRules] = useState<AnyInterpolation[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
   const [allPaused, setAllPaused] = useState<boolean | null>(null);
   const [defaultForm, setDefaultForm] = useState<string | null>(null);
@@ -41,7 +33,6 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
     null,
   );
 
-  const INTERPOLATE_SELECTED_FORM_KEY = "interpolate-selected-form";
   useEffect(() => {
     logger("Dashboard mounted", {});
     const handleDefaultSelection = async () => {
@@ -74,26 +65,29 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
     onSubmit: async ({ value, meta }) => {
       logger(`Selected action - ${meta?.submitAction}`, value);
       if (meta.submitAction === "add-redirect") {
-        addRulesInStorage([
-          createRedirectRule({
+        await updateInterpolationsInStorage([
+          createRedirectInterpolation({
             source: value.redirectRuleForm.source,
             destination: value.redirectRuleForm.destination,
+            name: value.redirectRuleForm.name || "Redirect Rule",
           }),
         ]);
         return;
       }
       if (meta.submitAction === "add-header") {
-        addRulesInStorage([
-          createHeaderRule({
+        await updateInterpolationsInStorage([
+          createHeaderInterpolation({
             headerKey: value.headerRuleForm.key,
             headerValue: value.headerRuleForm.value,
+            name: value.headerRuleForm.name || "Header Rule",
           }),
         ]);
         return;
       }
       if (meta.submitAction === "create-script") {
-        addScriptsInStorage([
-          createScript({
+        await updateInterpolationsInStorage([
+          createScriptInterpolation({
+            name: value.scriptForm.name,
             id: value.scriptForm.id,
             body: value.scriptForm.body,
             include: value.scriptForm.include,
@@ -105,9 +99,9 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   });
 
   const getIsEveryRulePaused = async () => {
-    const rulesInStorage = await getRulesFromStorage();
+    const rulesInStorage = await getInterpolationsFromStorage();
     const isEveryRulePaused = rulesInStorage.every(
-      (rule) => rule?.meta?.enabledByUser === false,
+      (rule) => rule?.enabledByUser === false,
     );
 
     return isEveryRulePaused;
@@ -124,19 +118,18 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   useEffect(() => {
     const getInitialRulesFromStorage = async () => {
-      const rulesFromStorage = await getRulesFromStorage();
-      setDisplayedRules(rulesFromStorage);
+      const allRules = await getInterpolationsFromStorage();
+      setDisplayedRules(allRules);
     };
 
     getInitialRulesFromStorage();
   }, []);
 
   useEffect(() => {
-    subscribeToRuleChanges(async (changes) => {
+    subscribeToInterpolations(async (changes) => {
       setDisplayedRules(changes.newValue);
       const isEveryRulePaused = await getIsEveryRulePaused();
       setAllPaused(isEveryRulePaused);
-      setLastError(chrome.runtime.lastError?.message ?? null);
     });
   }, []);
 

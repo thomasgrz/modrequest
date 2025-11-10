@@ -46,6 +46,15 @@ export const ScriptForm = withForm({
               />
             )}
           </form.AppField>
+          <form.AppField name="scriptForm.matches">
+            {(field) => (
+              <field.TextField
+                htmlFor="Matches"
+                label="Matches"
+                placeholder="*://*/*"
+              />
+            )}
+          </form.AppField>
           <form.AppField name="scriptForm.exclude">
             {(field) => (
               <field.TextField

@@ -4,6 +4,7 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
+    "lib": ["ESNext"],
     "baseUrl": ".",
     "types": ["chrome"],
     "paths": {
