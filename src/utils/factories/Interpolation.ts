@@ -10,6 +10,7 @@ export type HeaderInterpolationConfig = {
   details: chrome.declarativeNetRequest.Rule;
   name: string;
 };
+export type InterpolationType = "script" | "redirect" | "headers";
 
 class Interpolation {
   createdAt: number;

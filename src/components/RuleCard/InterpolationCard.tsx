@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 
-import Interpolation, {
+import {
   HeaderInterpolation,
   RedirectInterpolation,
   ScriptInterpolation,
 } from "@/utils/factories/Interpolation";
-import { pauseInterpolations } from "@/utils/ruleStatus/pauseInterpolations/pauseInterpolations";
-import { resumeInterpolations } from "@/utils/ruleStatus/resumeInterpolations/resumeInterpolations";
-import { deleteInterpolationById } from "@/utils/storage/deleteInterpolationInStorage/deleteInterpolationInStorage";
-import { subscribeToInterpolations } from "@/utils/subscription/subscribeToInterpolations/subscribeToInterpolations";
+import { InterpolateStorage } from "@/utils/storage/InterpolateStorage/InterpolateStorage";
 import {
   DoubleArrowDownIcon,
   DoubleArrowUpIcon,
@@ -56,8 +53,8 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
   }, [isPaused]);
 
   useEffect(() => {
-    subscribeToInterpolations(({ newValue }: { newValue: Interpolation[] }) => {
-      const parentConfig = newValue.find(
+    InterpolateStorage.subscribeToChanges(async (values) => {
+      const parentConfig = values.find(
         (value) => value.details.id === info.details.id,
       );
       const isParentConfigPaused = parentConfig?.enabledByUser === false;
@@ -67,15 +64,15 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
   }, []);
 
   const onDelete = async () => {
-    deleteInterpolationById(info.details.id);
+    await InterpolateStorage.delete(info);
   };
 
-  const handleResumeClick = () => {
-    resumeInterpolations([info.details.id]);
+  const handleResumeClick = async () => {
+    await InterpolateStorage.setIsEnabled(info, true);
   };
 
-  const handlePauseClick = () => {
-    pauseInterpolations([info.details.id]);
+  const handlePauseClick = async () => {
+    await InterpolateStorage.setIsEnabled(info, false);
   };
 
   const collapseTriggerContent = isOpen ? "collapse" : "expand";
@@ -90,8 +87,7 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
         <Flex justify={"between"} flexGrow="2">
           <Box>
             <Flex>
-              {info.type === "redirect" && <RedirectPreview config={info} />}
-              {info.type === "headers" && <HeaderPreview config={info} />}
+              <InterpolationCard info={info} />
             </Flex>
             <Flex py="1">
               {hit && !info.error && (
@@ -134,7 +130,7 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
             </DataList.Item>
             <DataList.Item>
               <DataList.Label>Type:</DataList.Label>
-              <DataList.Value>{info.details?.action?.type}</DataList.Value>
+              <DataList.Value>{info.type}</DataList.Value>
             </DataList.Item>
             <DataList.Item>
               <DataList.Label>Enabled:</DataList.Label>

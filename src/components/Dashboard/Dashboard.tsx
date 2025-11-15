@@ -15,18 +15,17 @@ import { createRedirectInterpolation } from "@/utils/factories/createRedirectInt
 import { createScriptInterpolation } from "@/utils/factories/createScriptInterpolation/createScriptInterpolation";
 import { AnyInterpolation } from "@/utils/factories/Interpolation";
 import { logger } from "@/utils/logger";
-import { getInterpolationsFromStorage } from "@/utils/storage/getInterpolationsFromStorage/getInterpolationsFromStorage";
+import { InterpolateStorage } from "@/utils/storage/InterpolateStorage/InterpolateStorage";
 import { INTERPOLATE_SELECTED_FORM_KEY } from "@/utils/storage/storage.constants";
-import { updateInterpolationsInStorage } from "@/utils/storage/updateInterpolationsInStorage/updateInterpolationsInStorage";
-import { subscribeToInterpolations } from "@/utils/subscription/subscribeToInterpolations/subscribeToInterpolations";
 import { DashboardControls } from "../DashboardControls/DashboardControls";
 import { HeaderForm } from "../HeaderForm/HeaderForm";
+import { RedirectForm } from "../RedirecForm/RedirectForm";
+import { InterpolationCard } from "../RuleCard/InterpolationCard";
 import { ScriptForm } from "../ScriptForm/ScriptForm";
 import styles from "./Dashboard.module.scss";
 
 export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   const [displayedRules, setDisplayedRules] = useState<AnyInterpolation[]>([]);
-  const [lastError, setLastError] = useState<string | null>(null);
   const [allPaused, setAllPaused] = useState<boolean | null>(null);
   const [defaultForm, setDefaultForm] = useState<string | null>(null);
   const [selectedConfigForm, setSelectedConfigForm] = useState<string | null>(
@@ -65,7 +64,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
     onSubmit: async ({ value, meta }) => {
       logger(`Selected action - ${meta?.submitAction}`, value);
       if (meta.submitAction === "add-redirect") {
-        await updateInterpolationsInStorage([
+        await InterpolateStorage.create([
           createRedirectInterpolation({
             source: value.redirectRuleForm.source,
             destination: value.redirectRuleForm.destination,
@@ -75,17 +74,17 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         return;
       }
       if (meta.submitAction === "add-header") {
-        await updateInterpolationsInStorage([
+        await InterpolateStorage.create([
           createHeaderInterpolation({
             headerKey: value.headerRuleForm.key,
             headerValue: value.headerRuleForm.value,
-            name: value.headerRuleForm.name || "Header Rule",
+            name: value.headerRuleForm.name,
           }),
         ]);
         return;
       }
       if (meta.submitAction === "create-script") {
-        await updateInterpolationsInStorage([
+        await InterpolateStorage.create([
           createScriptInterpolation({
             name: value.scriptForm.name,
             id: value.scriptForm.id,
@@ -99,12 +98,12 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   });
 
   const getIsEveryRulePaused = async () => {
-    const rulesInStorage = await getInterpolationsFromStorage();
-    const isEveryRulePaused = rulesInStorage.every(
+    const rulesInStorage = await InterpolateStorage.getAll();
+    const isEveryRulePaused = rulesInStorage?.every(
       (rule) => rule?.enabledByUser === false,
     );
 
-    return isEveryRulePaused;
+    return !!isEveryRulePaused;
   };
 
   useEffect(() => {
@@ -118,7 +117,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
 
   useEffect(() => {
     const getInitialRulesFromStorage = async () => {
-      const allRules = await getInterpolationsFromStorage();
+      const allRules = (await InterpolateStorage.getAll()) ?? [];
       setDisplayedRules(allRules);
     };
 
@@ -126,62 +125,44 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   }, []);
 
   useEffect(() => {
-    subscribeToInterpolations(async (changes) => {
-      setDisplayedRules(changes.newValue);
+    InterpolateStorage.subscribeToChanges(async (changes) => {
+      setDisplayedRules(changes);
       const isEveryRulePaused = await getIsEveryRulePaused();
       setAllPaused(isEveryRulePaused);
     });
   }, []);
 
   const handleAllPaused = async () => {
-    const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map(
-      (rule: RedirectRule | RequestHeaderRule) => {
-        return {
-          ...rule,
-          meta: {
-            ...rule.meta,
-            enabledByUser: false,
-          },
-        };
-      },
-    );
-
-    chrome.storage.local.set({
-      rules: pausedRules,
-    });
-
-    setAllPaused(true);
+    try {
+      setAllPaused(true);
+      await InterpolateStorage.disableAll();
+      logger("handleAllPaused: all rules paused successfully.");
+    } catch (e) {
+      logger("handleAllPaused: failed with error: ", e);
+    }
   };
 
   const handleAllResumed = async () => {
-    const rulesInStorage = await getRulesFromStorage();
-    const pausedRules = rulesInStorage.map(
-      (rule: RedirectRule | RequestHeaderRule) => {
-        return {
-          ...rule,
-          meta: {
-            ...rule.meta,
-            enabledByUser: true,
-          },
-        };
-      },
-    );
-
-    chrome.storage.local.set({
-      rules: pausedRules,
-    });
-
-    setAllPaused(false);
+    try {
+      setAllPaused(false);
+      await InterpolateStorage.enableAll();
+      logger("handleAllResumed: all rules resumed successfully");
+    } catch (e) {
+      logger("handleAllResumed: failed with error: ", e);
+    }
   };
 
   const rulesSortedByCreationTime = () =>
     displayedRules.sort((item1, item2) => {
-      return item2.meta.createdAt - item1.meta.createdAt;
+      return item2.createdAt - item1.createdAt;
     });
 
   const handleControlChange = (selectedForm: string) => {
     setSelectedConfigForm(selectedForm);
+  };
+
+  const handleDeleteAll = async () => {
+    await InterpolateStorage.deleteAll();
   };
 
   const displayedForm = selectedConfigForm ?? defaultForm ?? "redirect-rules";
@@ -195,20 +176,6 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         </Callout.Root>
       }
     >
-      {lastError && (
-        <Flex p="1">
-          <Callout.Root size={"1"} color="ruby">
-            {lastError}
-          </Callout.Root>
-        </Flex>
-      )}
-      {lastError && (
-        <Flex p="1">
-          <Callout.Root size={"1"} color="ruby">
-            {lastError}
-          </Callout.Root>
-        </Flex>
-      )}
       <Box p="2">
         <SegmentedControl.Root
           onValueChange={handleControlChange}
@@ -224,9 +191,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       </Box>
       <Flex height={"100%"} direction="column" flexGrow={"1"}>
         <form>
-          {displayedForm === "redirect-rules" && (
-            <RedirectRuleForm form={form} />
-          )}
+          {displayedForm === "redirect-rules" && <RedirectForm form={form} />}
           {displayedForm === "headers" && <HeaderForm form={form} />}
           {displayedForm === "scripts" && <ScriptForm form={form} />}
         </form>
@@ -237,7 +202,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         allPaused={!!allPaused}
         onResumeAllRules={handleAllResumed}
         onPauseAllRules={handleAllPaused}
-        onDeleteAllRules={deleteAllRulesInStorage}
+        onDeleteAllRules={handleDeleteAll}
       />
       <Separator size={"4"} my="1" />
       <Flex
@@ -252,7 +217,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
           rulesSortedByCreationTime()?.map((rule) => {
             return (
               <Box width={"100%"} p="1" className={styles.RuleCardContainer}>
-                <RuleCard rule={rule} />{" "}
+                <InterpolationCard info={rule} />{" "}
               </Box>
             );
           })}
