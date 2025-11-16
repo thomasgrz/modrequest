@@ -22,6 +22,7 @@ export const DashboardControls = ({
       <Flex justify={"between"} flexGrow={"1"} width="100%">
         {allPaused ? (
           <Button
+            type="button"
             disabled={!ruleCount}
             size={"3"}
             className={styles.ResumeAllRules}
@@ -33,6 +34,7 @@ export const DashboardControls = ({
           </Button>
         ) : (
           <Button
+            type="button"
             disabled={!ruleCount}
             size={"3"}
             className={styles.PauseAllRules}

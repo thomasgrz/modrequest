@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
+import { SubmitAction } from "@/constants";
 import { createHeaderInterpolation } from "@/utils/factories/createHeaderInterpolation/createHeaderInterpolation";
 import { createRedirectInterpolation } from "@/utils/factories/createRedirectInterpolation/createRedirectInterpolation";
 import { createScriptInterpolation } from "@/utils/factories/createScriptInterpolation/createScriptInterpolation";
@@ -33,15 +34,16 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
   );
 
   useEffect(() => {
-    logger("Dashboard mounted", {});
+    logger("Dashboard mounted");
     const handleDefaultSelection = async () => {
       const initialSelectedForm = await chrome.storage.local.get(
         INTERPOLATE_SELECTED_FORM_KEY,
       );
       if (initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY]) {
         logger(
-          "Initial selected form:",
-          initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY],
+          `Initial selected form: ${
+            initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY]
+          }`,
         );
         setDefaultForm(initialSelectedForm[INTERPOLATE_SELECTED_FORM_KEY]);
       }
@@ -62,8 +64,8 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       submitAction: null,
     },
     onSubmit: async ({ value, meta }) => {
-      logger(`Selected action - ${meta?.submitAction}`, value);
-      if (meta.submitAction === "add-redirect") {
+      logger(`Selected action - ${meta?.submitAction}`);
+      if (meta.submitAction === SubmitAction.AddRedirect) {
         await InterpolateStorage.create([
           createRedirectInterpolation({
             source: value.redirectRuleForm.source,
@@ -73,7 +75,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         ]);
         return;
       }
-      if (meta.submitAction === "add-header") {
+      if (meta.submitAction === SubmitAction.AddHeader) {
         await InterpolateStorage.create([
           createHeaderInterpolation({
             headerKey: value.headerRuleForm.key,
@@ -83,7 +85,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
         ]);
         return;
       }
-      if (meta.submitAction === "create-script") {
+      if (meta.submitAction === SubmitAction.CreateScript) {
         await InterpolateStorage.create([
           createScriptInterpolation({
             name: value.scriptForm.name,
@@ -138,7 +140,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       await InterpolateStorage.disableAll();
       logger("handleAllPaused: all rules paused successfully.");
     } catch (e) {
-      logger("handleAllPaused: failed with error: ", e);
+      logger(`handleAllPaused: failed with error: ${e}`);
     }
   };
 
@@ -148,12 +150,12 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       await InterpolateStorage.enableAll();
       logger("handleAllResumed: all rules resumed successfully");
     } catch (e) {
-      logger("handleAllResumed: failed with error: ", e);
+      logger(`handleAllResumed: failed with error: ${e}`);
     }
   };
 
   const rulesSortedByCreationTime = () =>
-    displayedRules.sort((item1, item2) => {
+    displayedRules?.sort((item1, item2) => {
       return item2.createdAt - item1.createdAt;
     });
 
@@ -198,7 +200,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       </Flex>
       <Separator size={"4"} my="1" />
       <DashboardControls
-        ruleCount={displayedRules.length}
+        ruleCount={displayedRules?.length}
         allPaused={!!allPaused}
         onResumeAllRules={handleAllResumed}
         onPauseAllRules={handleAllPaused}

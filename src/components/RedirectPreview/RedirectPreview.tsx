@@ -1,7 +1,7 @@
+import { RedirectInterpolation } from "@/utils/factories/Interpolation";
 import { Badge, DataList } from "@radix-ui/themes";
-import { RedirectRule } from "../RuleCard/InterpolationCard";
 
-export const RedirectRulePreview = (props: { rule: RedirectRule }) => {
+export const RedirectRulePreview = (props: { rule: RedirectInterpolation }) => {
   const { rule } = props;
 
   return (

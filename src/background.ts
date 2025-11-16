@@ -22,9 +22,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
   const updateUserScripts = async (interpolations: ScriptInterpolation[]) => {
     // get all registered scripts
-    const registeredScripts = await chrome.userScripts.getScripts();
+    const registeredScripts = (await chrome.userScripts.getScripts()) ?? [];
 
-    const scriptsByStatus = interpolations.reduce(
+    const scriptsByStatus = interpolations?.reduce(
       (
         acc: {
           enabledScripts: ScriptInterpolation[];
@@ -32,15 +32,15 @@ chrome.runtime.onInstalled.addListener(() => {
         },
         curr,
       ) => {
-        if (curr.enabledByUser) {
+        if (curr?.enabledByUser) {
           return {
             ...acc,
-            enabledScripts: [...acc.enabledScripts, curr],
+            enabledScripts: [...(acc?.enabledScripts ?? []), curr],
           };
         }
         return {
           ...acc,
-          pausedScripts: [...acc.pausedScripts, curr],
+          pausedScripts: [...(acc?.pausedScripts ?? []), curr],
         };
       },
       {
@@ -50,26 +50,28 @@ chrome.runtime.onInstalled.addListener(() => {
     );
 
     // unregister paused scripts
-    const scriptsToUnRegister = registeredScripts.filter((script) => {
-      return scriptsByStatus.pausedScripts.some(
-        (paused) => paused.details.id === script.id,
+    const scriptsToUnRegister = registeredScripts?.filter?.((script) => {
+      return scriptsByStatus?.pausedScripts?.some(
+        (paused) => paused?.details?.id === script?.id,
       );
     });
 
     await chrome.userScripts.unregister({
-      ids: [...scriptsToUnRegister.map((script) => script.id)],
+      ids: [...scriptsToUnRegister?.map((script) => script.id)],
     });
 
     // register any new enabled scripts
-    const scriptsToRegister = interpolations.filter((interp) => {
-      return registeredScripts.some(
-        (script) => script.id === interp.details.id,
+    const scriptsToRegister = interpolations?.filter((interp) => {
+      const registeredScript = registeredScripts?.find(
+        (script) => script?.id === interp?.details.id,
       );
+      const isScriptUnregistered = !registeredScript;
+      return isScriptUnregistered;
     });
 
-    if (scriptsToRegister.length) {
+    if (scriptsToRegister?.length) {
       await chrome.userScripts.register([
-        ...scriptsToRegister.map((script) => script.details),
+        ...scriptsToRegister?.map((script) => script.details),
       ]);
     }
   };
@@ -79,7 +81,7 @@ chrome.runtime.onInstalled.addListener(() => {
   ) => {
     const registeredDynamicRules =
       await chrome.declarativeNetRequest.getDynamicRules();
-    const rulesByStatus = interpolations.reduce(
+    const rulesByStatus = interpolations?.reduce(
       (
         acc: {
           enabledRules: (RedirectInterpolation | HeaderInterpolation)[];
@@ -87,15 +89,15 @@ chrome.runtime.onInstalled.addListener(() => {
         },
         curr,
       ) => {
-        if (curr.enabledByUser) {
+        if (curr?.enabledByUser) {
           return {
             ...acc,
-            enabledRules: [...acc.enabledRules, curr],
+            enabledRules: [...(acc?.enabledRules ?? []), curr],
           };
         }
         return {
           ...acc,
-          pausedRules: [...acc.pausedRules, curr],
+          pausedRules: [...(acc?.pausedRules ?? []), curr],
         };
       },
       {
@@ -104,27 +106,27 @@ chrome.runtime.onInstalled.addListener(() => {
       },
     );
     // unregister any paused rules
-    const rulesToPause = registeredDynamicRules.filter((rule) => {
-      return rulesByStatus.pausedRules.some(
+    const rulesToPause = registeredDynamicRules?.filter((rule) => {
+      return rulesByStatus?.pausedRules?.some(
         (interp) => interp.details.id === rule.id,
       );
     });
 
-    if (rulesToPause.length) {
+    if (rulesToPause?.length) {
       await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: rulesToPause.map((rule) => rule.id),
+        removeRuleIds: rulesToPause?.map((rule) => rule.id),
       });
     }
     // register any enabled rules
-    const rulesToEnable = rulesByStatus.enabledRules.filter((interp) => {
+    const rulesToEnable = rulesByStatus?.enabledRules?.filter((interp) => {
       return !registeredDynamicRules.some(
         (rule) => rule.id === interp.details.id,
       );
     });
 
-    if (rulesToEnable.length) {
+    if (rulesToEnable?.length) {
       await chrome.declarativeNetRequest.updateDynamicRules({
-        addRules: rulesToEnable.map((rule) => rule.details),
+        addRules: rulesToEnable?.map((rule) => rule.details),
       });
     }
   };
@@ -138,21 +140,21 @@ chrome.runtime.onInstalled.addListener(() => {
         }) as ScriptInterpolation[];
         updateUserScripts(userScriptChanges);
       } catch (e) {
-        logger("updateUserScripts error: ", e);
+        logger(`updateUserScripts error: ${e}`);
       }
 
       try {
         const dynamicRuleChanges = newValues?.filter((value) => {
-          return ["redirect", "headers"].includes(value.type);
+          return ["redirect", "headers"]?.includes(value?.type);
         }) as (RedirectInterpolation | HeaderInterpolation)[];
         updateDynamicRules(dynamicRuleChanges);
       } catch (e) {
-        logger("updateDynamicRules error: ", e);
+        logger(`updateDynamicRules error: ${e}`);
       }
 
       logger("syncAllInterpolationsWithStorage invoked successfully");
     } catch (e) {
-      logger("syncAllInterpolationsWithStorage resulted with error: ", e);
+      logger(`syncAllInterpolationsWithStorage resulted with error: ${e}`);
     }
   });
 });

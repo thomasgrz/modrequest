@@ -20,6 +20,8 @@ class Interpolation {
 
   constructor(config: { name: string }) {
     this.createdAt = Date.now();
+    this.enabledByUser = true;
+    this.error = null;
     this.name = config.name;
   }
 }

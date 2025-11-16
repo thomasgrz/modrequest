@@ -1,3 +1,4 @@
+import { SubmitAction } from "@/constants";
 import { dashboardFormOptions } from "@/contexts/dashboard-context";
 import { withForm } from "@/hooks/useForm/useForm";
 import { PlusCircledIcon } from "@radix-ui/react-icons";
@@ -78,7 +79,7 @@ export const ScriptForm = withForm({
               color="yellow"
               variant="outline"
               onClick={() =>
-                form.handleSubmit({ submitAction: "create-script" })
+                form.handleSubmit({ submitAction: SubmitAction.CreateScript })
               }
               type="button"
               size="2"

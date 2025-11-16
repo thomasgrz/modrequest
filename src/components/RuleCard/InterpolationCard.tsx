@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   HeaderInterpolation,
@@ -22,6 +22,8 @@ import {
   Tooltip,
 } from "@radix-ui/themes";
 import { Collapsible } from "radix-ui";
+import { HeaderRulePreview } from "../HeaderPreview/HeaderPreview";
+import { RedirectRulePreview } from "../RedirectPreview/RedirectPreview";
 import { RuleDeleteAction } from "../RuleDeleteAction/RuleDeleteAction";
 import { RuleToggle } from "../RuleToggle/RuleToggle";
 import styles from "./InterpolationCard.module.scss";
@@ -37,31 +39,31 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
     "green",
   );
 
-  useEffect(() => {
-    chrome.runtime.onMessage.addListener((msg) => {
-      if (msg === `redirect-${info.details.id}-hit`) {
-        setRecentlyHitColor("green");
-        setHit(true);
-        setTimeout(() => {
-          setRecentlyHitColor("gray");
-        }, 5000);
-        setTimeout(() => {
-          setHit(false);
-        }, 30000);
-      }
-    });
-  }, [isPaused]);
+  // useEffect(() => {
+  //   chrome.runtime.onMessage.addListener((msg) => {
+  //     if (msg === `redirect-${info.details.id}-hit`) {
+  //       setRecentlyHitColor("green");
+  //       setHit(true);
+  //       setTimeout(() => {
+  //         setRecentlyHitColor("gray");
+  //       }, 5000);
+  //       setTimeout(() => {
+  //         setHit(false);
+  //       }, 30000);
+  //     }
+  //   });
+  // }, [isPaused]);
 
-  useEffect(() => {
-    InterpolateStorage.subscribeToChanges(async (values) => {
-      const parentConfig = values.find(
-        (value) => value.details.id === info.details.id,
-      );
-      const isParentConfigPaused = parentConfig?.enabledByUser === false;
+  // useEffect(() => {
+  //   InterpolateStorage.subscribeToChanges(async (values) => {
+  //     const parentConfig = values.find(
+  //       (value) => value.details.id === info.details.id,
+  //     );
+  //     const isParentConfigPaused = parentConfig?.enabledByUser === false;
 
-      setIsPaused(isParentConfigPaused);
-    });
-  }, []);
+  //     setIsPaused(isParentConfigPaused);
+  //   });
+  // }, []);
 
   const onDelete = async () => {
     await InterpolateStorage.delete(info);
@@ -77,6 +79,16 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
 
   const collapseTriggerContent = isOpen ? "collapse" : "expand";
 
+  const getPreview = () => {
+    switch (info.type) {
+      case "headers":
+        return <HeaderRulePreview details={info.details} name={info.name} />;
+      case "redirect":
+        return <RedirectRulePreview rule={info} />;
+      case "script":
+        return <div>{JSON.stringify(info.details)}</div>;
+    }
+  };
   return (
     <Card
       data-ui-active={hit}
@@ -86,9 +98,7 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
       <Collapsible.Root onOpenChange={setIsOpen} open={isOpen}>
         <Flex justify={"between"} flexGrow="2">
           <Box>
-            <Flex>
-              <InterpolationCard info={info} />
-            </Flex>
+            <Flex>{getPreview()}</Flex>
             <Flex py="1">
               {hit && !info.error && (
                 <Badge color={recentlyHitColor}>Recently hit</Badge>

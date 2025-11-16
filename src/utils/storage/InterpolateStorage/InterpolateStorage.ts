@@ -15,7 +15,7 @@ export const InterpolateStorage = {
   },
   async set(interpolations?: AnyInterpolation[]) {
     if (!interpolations) return;
-    await chrome.storage.sync.set({
+    chrome.storage.sync.set({
       [INTERPOLATION_STORAGE_KEY]: interpolations,
     });
   },
@@ -97,7 +97,7 @@ export const InterpolateStorage = {
     this.logInvocation(caller);
     let result;
     try {
-      result = await chrome.storage.sync.set({
+      result = chrome.storage.sync.set({
         [INTERPOLATION_STORAGE_KEY + "-rollback-record"]: before,
       });
     } catch (e) {
@@ -178,7 +178,7 @@ export const InterpolateStorage = {
           };
         };
         const updatedValues = changes?.[INTERPOLATION_STORAGE_KEY]?.newValue;
-        logger("onChanged: updatedValues: ", updatedValues);
+        logger("onChanged: updatedValues: ");
         cb(updatedValues);
       });
     } catch (e) {
