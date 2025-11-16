@@ -1,8 +1,6 @@
-import {
-  RedirectRule,
-  RuleCard,
-} from "@/components/RuleCard/InterpolationCard";
-import { subscribeToRuleChanges } from "@/utils/subscription/subscribeToInterpolations/subscribeToInterpolations";
+import { InterpolationCard } from "@/components/RuleCard/InterpolationCard";
+import { AnyInterpolation } from "@/utils/factories/Interpolation";
+import { InterpolateStorage } from "@/utils/storage/InterpolateStorage/InterpolateStorage";
 import { Box, Button, Flex, IconButton, Theme } from "@radix-ui/themes";
 import { Separator } from "radix-ui";
 import { useEffect, useState } from "react";
@@ -12,7 +10,7 @@ import styles from "./ContentView.module.scss";
 
 export const ContentView = () => {
   const [show, setShow] = useState(true);
-  const [displayedRules, setDisplayedRules] = useState<RedirectRule[]>([]);
+  const [displayedRules, setDisplayedRules] = useState<AnyInterpolation[]>([]);
 
   const fetchRules = async () => {
     const _rules = await chrome.storage.local.get("rules");
@@ -29,7 +27,9 @@ export const ContentView = () => {
   }, []);
 
   useEffect(() => {
-    subscribeToRuleChanges((changes) => setDisplayedRules(changes.newValue));
+    InterpolateStorage.subscribeToChanges(async (changes) =>
+      setDisplayedRules(changes),
+    );
   }, []);
 
   return (
@@ -41,7 +41,7 @@ export const ContentView = () => {
             className={show ? styles.DisplayedRules : styles.HiddenRules}
           >
             {displayedRules?.map?.((rule) => (
-              <RuleCard key={rule.details.id} rule={rule} />
+              <InterpolationCard key={rule.details.id} info={rule} />
             ))}
           </div>
           <Separator.Root />

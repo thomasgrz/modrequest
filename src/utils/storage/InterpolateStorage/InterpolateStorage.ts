@@ -22,13 +22,12 @@ export const InterpolateStorage = {
   async create(interpolationsToCreate: AnyInterpolation[]) {
     const caller = "create";
     this.logInvocation(caller);
-    let result;
     try {
       const allCurrent = await this.getAll();
       await this.createRollbackRecord(allCurrent);
       const currentWithNewlyCreated =
         allCurrent?.concat(interpolationsToCreate) ?? [];
-      result = this.set(currentWithNewlyCreated);
+      await this.set(currentWithNewlyCreated);
     } catch (e) {
       this.logError(caller, e as string);
     }
@@ -73,7 +72,6 @@ export const InterpolateStorage = {
   ) {
     const caller = "update";
     this.logInvocation(caller);
-    let result;
     try {
       const allCurrent = await this.getAll();
       await this.createRollbackRecord(allCurrent);
@@ -87,7 +85,7 @@ export const InterpolateStorage = {
 
         return interpolation;
       });
-      result = await this.set(updatedInterpolations);
+      await this.set(updatedInterpolations);
     } catch (e) {
       this.logError(caller, e as string);
     }
@@ -134,11 +132,10 @@ export const InterpolateStorage = {
   async deleteAll() {
     const caller = "deleteAll";
     this.logInvocation(caller);
-    let result;
     try {
       const allCurrent = await this.getAll();
       await this.createRollbackRecord(allCurrent);
-      result = await chrome.storage.sync.set({
+      await chrome.storage.sync.set({
         [INTERPOLATION_STORAGE_KEY]: [],
       });
     } catch (e) {
@@ -148,14 +145,13 @@ export const InterpolateStorage = {
   async delete(interpolationToDelete: AnyInterpolation) {
     const caller = "delete";
     this.logInvocation(caller);
-    let result;
     try {
       const allCurrent = await this.getAll();
       await this.createRollbackRecord(allCurrent);
       const interpolationsWithoutDeleted = allCurrent?.filter?.(
         (current) => current?.details?.id !== interpolationToDelete.details.id,
       );
-      result = chrome.storage.sync.set({
+      chrome.storage.sync.set({
         [INTERPOLATION_STORAGE_KEY]: interpolationsWithoutDeleted,
       });
     } catch (e) {

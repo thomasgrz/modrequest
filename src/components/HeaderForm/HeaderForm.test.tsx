@@ -4,6 +4,7 @@ import { HeaderForm } from "./HeaderForm";
 
 describe("HeaderForm", () => {
   it("should display all inputs", () => {
-    render(<HeaderForm />);
+    // @ts-expect-error testing
+    render(<HeaderForm info={{}} />);
   });
 });

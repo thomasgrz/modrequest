@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   HeaderInterpolation,
@@ -39,31 +39,31 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
     "green",
   );
 
-  // useEffect(() => {
-  //   chrome.runtime.onMessage.addListener((msg) => {
-  //     if (msg === `redirect-${info.details.id}-hit`) {
-  //       setRecentlyHitColor("green");
-  //       setHit(true);
-  //       setTimeout(() => {
-  //         setRecentlyHitColor("gray");
-  //       }, 5000);
-  //       setTimeout(() => {
-  //         setHit(false);
-  //       }, 30000);
-  //     }
-  //   });
-  // }, [isPaused]);
+  useEffect(() => {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg === `redirect-${info.details.id}-hit`) {
+        setRecentlyHitColor("green");
+        setHit(true);
+        setTimeout(() => {
+          setRecentlyHitColor("gray");
+        }, 5000);
+        setTimeout(() => {
+          setHit(false);
+        }, 30000);
+      }
+    });
+  }, [isPaused]);
 
-  // useEffect(() => {
-  //   InterpolateStorage.subscribeToChanges(async (values) => {
-  //     const parentConfig = values.find(
-  //       (value) => value.details.id === info.details.id,
-  //     );
-  //     const isParentConfigPaused = parentConfig?.enabledByUser === false;
+  useEffect(() => {
+    InterpolateStorage.subscribeToChanges(async (values) => {
+      const parentConfig = values.find(
+        (value) => value.details.id === info.details.id,
+      );
+      const isParentConfigPaused = parentConfig?.enabledByUser === false;
 
-  //     setIsPaused(isParentConfigPaused);
-  //   });
-  // }, []);
+      setIsPaused(isParentConfigPaused);
+    });
+  }, []);
 
   const onDelete = async () => {
     await InterpolateStorage.delete(info);
@@ -82,7 +82,8 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
   const getPreview = () => {
     switch (info.type) {
       case "headers":
-        return <HeaderRulePreview details={info.details} name={info.name} />;
+        // @ts-expect-error testing
+        return <HeaderRulePreview details={info} name={info.name} />;
       case "redirect":
         return <RedirectRulePreview rule={info} />;
       case "script":
