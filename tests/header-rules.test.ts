@@ -1,4 +1,3 @@
-import { http, HttpResponse } from "msw";
 import { expect, test } from "../fixtures/expect";
 
 const createHeaderRule = async (arg: {
@@ -18,16 +17,7 @@ const createHeaderRule = async (arg: {
   await page.getByText("Add config").click();
 };
 
-test.only("should apply header rule", async ({
-  page,
-  extensionId,
-  network,
-}) => {
-  network.use(
-    http.get("http://localhost:3000/headers", () => {
-      return HttpResponse.json({});
-    }),
-  );
+test("should apply header rule", async ({ page, extensionId, network }) => {
   // Create a header modification rule
   await createHeaderRule({
     page,
@@ -37,7 +27,7 @@ test.only("should apply header rule", async ({
   });
 
   // Navigate to a test page
-  await page.goto("http://localhost:3000/headers");
+  await page.goto("https://httpbin.org/headers");
 
   // Verify that the header has been added
   const headerContent = await page.locator("pre").innerText();
