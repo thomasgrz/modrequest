@@ -159,8 +159,9 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
       return item2.createdAt - item1.createdAt;
     });
 
-  const handleControlChange = (selectedForm: string) => {
+  const handleFormSelection = (selectedForm: string) => {
     setSelectedConfigForm(selectedForm);
+    form.reset();
   };
 
   const handleDeleteAll = async () => {
@@ -180,7 +181,7 @@ export const Dashboard = ({ showRules = true }: { showRules?: boolean }) => {
     >
       <Box p="2">
         <SegmentedControl.Root
-          onValueChange={handleControlChange}
+          onValueChange={handleFormSelection}
           size="1"
           value={selectedConfigForm ?? defaultForm ?? "redirect-rules"}
         >

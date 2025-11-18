@@ -7,9 +7,7 @@ export const HeaderRulePreview = ({ details }: HeaderInterpolation) => {
       <DataList.Item>
         <DataList.Label>Type:</DataList.Label>
         <DataList.Value>
-          <Badge color="yellow" variant="outline">
-            Header
-          </Badge>
+          <Badge color="yellow">Header</Badge>
         </DataList.Value>
       </DataList.Item>
       <DataList.Item>

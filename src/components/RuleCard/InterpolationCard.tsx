@@ -27,6 +27,7 @@ import { RedirectRulePreview } from "../RedirectPreview/RedirectPreview";
 import { RuleDeleteAction } from "../RuleDeleteAction/RuleDeleteAction";
 import { RuleToggle } from "../RuleToggle/RuleToggle";
 import styles from "./InterpolationCard.module.scss";
+import { ScriptPreview } from "../ScriptPreview/ScriptPreview";
 
 type InterpolationCardProps = {
   info: RedirectInterpolation | HeaderInterpolation | ScriptInterpolation;
@@ -87,7 +88,7 @@ export const InterpolationCard = ({ info }: InterpolationCardProps) => {
       case "redirect":
         return <RedirectRulePreview rule={info} />;
       case "script":
-        return <div>{JSON.stringify(info.details)}</div>;
+        return <ScriptPreview rule={info} />;
     }
   };
   return (
