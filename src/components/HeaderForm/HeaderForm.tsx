@@ -17,7 +17,7 @@ export const HeaderForm = withForm({
         <Flex gap="1" direction={"column"}>
           <form.AppField
             validators={validators}
-            name="headerKey"
+            name="headerRuleForm.key"
             children={(field) => (
               <div className={styles.Input}>
                 <field.TextField
@@ -30,7 +30,7 @@ export const HeaderForm = withForm({
           />
           <form.AppField
             validators={validators}
-            name="headerValue"
+            name="headerRuleForm.value"
             children={(field) => (
               <field.TextField
                 placeholder="http://test.domain.com"
@@ -42,7 +42,7 @@ export const HeaderForm = withForm({
           <Flex flexGrow={"1"} justify={"end"}>
             <Button
               onClick={() => form.handleSubmit({ submitAction: "add-header" })}
-              type="submit"
+              type="button"
               size="1"
             >
               <CardAddIcon />

@@ -1,2 +1,2 @@
-export const logger = (msg: string, data: unknown) =>
-  console.info("[modrequest]: ", msg, data);
+export const logger = (msg: string) =>
+  console.info("[Interpolate Chrome Extension]: ", msg);

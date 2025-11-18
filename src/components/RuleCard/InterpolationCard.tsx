@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { deleteRuleById } from "@/utils/deleteRuleById/deleteRuleById";
-import { pauseRules } from "@/utils/pauseRules/pauseRules";
-import { resumeRules } from "@/utils/resumeRules/resumeRules";
-import { subscribeToRuleChanges } from "@/utils/subscribeToRuleChanges/subscribeToRuleChanges";
+import {
+  HeaderInterpolation,
+  RedirectInterpolation,
+  ScriptInterpolation,
+} from "@/utils/factories/Interpolation";
+import { InterpolateStorage } from "@/utils/storage/InterpolateStorage/InterpolateStorage";
 import {
   DoubleArrowDownIcon,
   DoubleArrowUpIcon,
@@ -20,32 +22,17 @@ import {
   Tooltip,
 } from "@radix-ui/themes";
 import { Collapsible } from "radix-ui";
-import { HeaderRulePreview } from "../HeaderRulePreview/HeaderRulePreview";
-import { RedirectRulePreview } from "../RedirectRulePreview/RedirectRulePreview";
+import { HeaderRulePreview } from "../HeaderPreview/HeaderPreview";
+import { RedirectRulePreview } from "../RedirectPreview/RedirectPreview";
 import { RuleDeleteAction } from "../RuleDeleteAction/RuleDeleteAction";
 import { RuleToggle } from "../RuleToggle/RuleToggle";
-import styles from "./RuleCard.module.scss";
+import styles from "./InterpolationCard.module.scss";
 
-export interface RedirectRule {
-  meta: {
-    enabledByUser?: boolean;
-    createdAt: number;
-    error?: string;
-  };
-  details: chrome.declarativeNetRequest.Rule;
-}
-
-export interface RequestHeaderRule {
-  meta: {
-    enabledByUser?: boolean;
-    createdAt: number;
-    error?: string;
-  };
-  details: chrome.declarativeNetRequest.Rule;
-}
-
-export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
-  const [isPaused, setIsPaused] = useState(!rule?.meta?.enabledByUser);
+type InterpolationCardProps = {
+  info: RedirectInterpolation | HeaderInterpolation | ScriptInterpolation;
+};
+export const InterpolationCard = ({ info }: InterpolationCardProps) => {
+  const [isPaused, setIsPaused] = useState(!info.enabledByUser);
   const [isOpen, setIsOpen] = useState(false);
   const [hit, setHit] = useState(false);
   const [recentlyHitColor, setRecentlyHitColor] = useState<"green" | "gray">(
@@ -54,7 +41,7 @@ export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener((msg) => {
-      if (msg === `redirect-${rule.details.id}-hit`) {
+      if (msg === `redirect-${info.details.id}-hit`) {
         setRecentlyHitColor("green");
         setHit(true);
         setTimeout(() => {
@@ -68,53 +55,58 @@ export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
   }, [isPaused]);
 
   useEffect(() => {
-    subscribeToRuleChanges(({ newValue }: { newValue: RedirectRule[] }) => {
-      const parentConfig = newValue.find(
-        (value) => value.details.id === rule.details.id,
+    InterpolateStorage.subscribeToChanges(async (values) => {
+      const parentConfig = values.find(
+        (value) => value.details.id === info.details.id,
       );
-      const isParentConfigPaused = parentConfig?.meta.enabledByUser === false;
+      const isParentConfigPaused = parentConfig?.enabledByUser === false;
 
       setIsPaused(isParentConfigPaused);
     });
   }, []);
 
   const onDelete = async () => {
-    deleteRuleById(rule.details.id);
+    await InterpolateStorage.delete(info);
   };
 
-  const handleResumeClick = () => {
-    resumeRules([rule.details.id]);
+  const handleResumeClick = async () => {
+    await InterpolateStorage.setIsEnabled(info, true);
   };
 
-  const handlePauseClick = () => {
-    pauseRules([rule.details.id]);
+  const handlePauseClick = async () => {
+    await InterpolateStorage.setIsEnabled(info, false);
   };
 
   const collapseTriggerContent = isOpen ? "collapse" : "expand";
 
+  const getPreview = () => {
+    switch (info.type) {
+      case "headers":
+        // @ts-expect-error testing
+        return <HeaderRulePreview details={info} name={info.name} />;
+      case "redirect":
+        return <RedirectRulePreview rule={info} />;
+      case "script":
+        return <div>{JSON.stringify(info.details)}</div>;
+    }
+  };
   return (
     <Card
       data-ui-active={hit}
-      data-ui-error={!!rule.meta.error}
-      className={styles.RuleCard}
+      data-ui-error={!!info.error}
+      className={styles.InterpolationCard}
     >
       <Collapsible.Root onOpenChange={setIsOpen} open={isOpen}>
         <Flex justify={"between"} flexGrow="2">
           <Box>
-            <Flex>
-              {rule.details.action.type === "redirect" ? (
-                <RedirectRulePreview rule={rule} />
-              ) : (
-                <HeaderRulePreview rule={rule} />
-              )}
-            </Flex>
+            <Flex>{getPreview()}</Flex>
             <Flex py="1">
-              {hit && !rule.meta.error && (
+              {hit && !info.error && (
                 <Badge color={recentlyHitColor}>Recently hit</Badge>
               )}
-              {rule.meta.error && (
+              {info.error && (
                 <>
-                  <Tooltip content={rule.meta.error}>
+                  <Tooltip content={info.error}>
                     <Badge color="ruby">
                       Error
                       <QuestionMarkCircledIcon />
@@ -127,10 +119,10 @@ export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
           <Flex direction={"column"} gap="3" className={styles.DeleteAction}>
             <RuleDeleteAction onDelete={onDelete} />
             <RuleToggle
-              disabled={!!rule.meta.error}
+              disabled={!!info.error}
               onResumeClick={handleResumeClick}
               onPauseClick={handlePauseClick}
-              isPaused={isPaused || !!rule.meta.error}
+              isPaused={isPaused || !!info.error}
             />
             <Tooltip content={collapseTriggerContent}>
               <Collapsible.Trigger asChild>
@@ -145,22 +137,20 @@ export const RuleCard = ({ rule }: { rule: RedirectRule }) => {
           <DataList.Root trim="end" size="1" m="1">
             <DataList.Item align={"end"}>
               <DataList.Label color="jade">Id:</DataList.Label>
-              <DataList.Value>{rule.details.id}</DataList.Value>
+              <DataList.Value>{info.details.id}</DataList.Value>
             </DataList.Item>
             <DataList.Item>
               <DataList.Label>Type:</DataList.Label>
-              <DataList.Value>{rule?.details?.action?.type}</DataList.Value>
+              <DataList.Value>{info.type}</DataList.Value>
             </DataList.Item>
             <DataList.Item>
               <DataList.Label>Enabled:</DataList.Label>
-              <DataList.Value>
-                {rule?.meta.enabledByUser?.toString()}
-              </DataList.Value>
+              <DataList.Value>{info.enabledByUser?.toString()}</DataList.Value>
             </DataList.Item>
             <DataList.Item>
               <DataList.Label>Config:</DataList.Label>
               <DataList.Value>
-                <Code>{JSON.stringify(rule)}</Code>
+                <Code>{JSON.stringify(info)}</Code>
               </DataList.Value>
             </DataList.Item>
           </DataList.Root>

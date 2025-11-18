@@ -1,23 +1,22 @@
 import { Page } from "@playwright/test";
 import { http, HttpResponse } from "msw";
-import { expect, test } from "../fixtures/expect.js";
+import { expect, test } from "../fixtures/expect";
 
 const createRedirectRule = async (arg: {
   page: Page;
   source: string;
   destination: string;
+  extensionId: string;
 }) => {
-  const { source, destination, page } = arg;
-  await page.goto(
-    `chrome-extension://ejgfblbiaaajjignebpjnjegobenjmno/src/options/index.html`,
-  );
+  const { source, destination, page, extensionId } = arg;
+  await page.goto(`chrome-extension://${extensionId}/src/options/index.html`);
 
   await page.getByPlaceholder(/example/).fill(source);
   await page.getByPlaceholder(/google/).fill(destination);
   await page.getByText("Add config").click();
 };
 
-test("should apply redirect rule", async ({ page, network }) => {
+test("should apply redirect rule", async ({ page, network, extensionId }) => {
   network.use(
     http.get("https://example.com/*", (args) => {
       return HttpResponse.text(
@@ -29,17 +28,19 @@ test("should apply redirect rule", async ({ page, network }) => {
     page,
     source: ".*something.*",
     destination: "https://example.com/*",
+    extensionId,
   });
 
   await page.goto("https://something.com");
   await expect(page.getByText(/Example Domain/)).toBeVisible();
 });
 
-test("should not apply paused redirect rule", async ({ page }) => {
+test("should not apply paused redirect rule", async ({ page, extensionId }) => {
   await createRedirectRule({
     page,
     source: ".*something.*",
     destination: "https://example.com/*",
+    extensionId,
   });
 
   // Pause the extension
@@ -49,17 +50,22 @@ test("should not apply paused redirect rule", async ({ page }) => {
   await expect(page).toHaveURL("https://something.com/");
 });
 
-test("should selectively apply redirect rule if enabled", async ({ page }) => {
+test("should selectively apply redirect rule if enabled", async ({
+  page,
+  extensionId,
+}) => {
   await createRedirectRule({
     page,
     source: ".*something.*",
     destination: "https://example.com/test",
+    extensionId,
   });
 
   await createRedirectRule({
     page,
     source: ".*google.*",
     destination: "https://example.com/test2",
+    extensionId,
   });
 
   // Pause the extension
@@ -72,18 +78,21 @@ test("should selectively apply redirect rule if enabled", async ({ page }) => {
 });
 
 test("should disable all rules when global pause is activated", async ({
+  extensionId,
   page,
 }) => {
   await createRedirectRule({
     page,
     source: ".*something.*",
     destination: "https://example.com/test",
+    extensionId,
   });
 
   await createRedirectRule({
     page,
     source: ".*google.*",
     destination: "https://example.com/test2",
+    extensionId,
   });
 
   // Activate global pause
@@ -96,18 +105,21 @@ test("should disable all rules when global pause is activated", async ({
 });
 
 test("should re-enable rules when global pause is deactivated", async ({
+  extensionId,
   page,
 }) => {
   await createRedirectRule({
     page,
     source: ".*something.*",
     destination: "https://example.com/test",
+    extensionId,
   });
 
   await createRedirectRule({
     page,
     source: ".*google.*",
     destination: "https://example.com/test2",
+    extensionId,
   });
 
   // Activate global pause
