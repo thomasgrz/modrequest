@@ -9,9 +9,7 @@ export const RedirectRulePreview = (props: { rule: RedirectInterpolation }) => {
       <DataList.Item align="center">
         <DataList.Label>Type:</DataList.Label>
         <DataList.Value>
-          <Badge color="cyan" variant="outline">
-            Redirect
-          </Badge>
+          <Badge color="cyan">Redirect</Badge>
         </DataList.Value>
       </DataList.Item>
       <DataList.Item>

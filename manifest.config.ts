@@ -15,7 +15,7 @@ export default defineManifest({
     // default_popup: "src/popup/index.html",
     default_title: "click to open sidepanel",
   },
-  devtools_page: "src/sidepanel/index.html",
+  devtools_page: "src/sidepanel/side-panel.html",
   permissions: [
     "contentSettings",
     "sidePanel",
