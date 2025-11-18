@@ -6,13 +6,13 @@ export default defineManifest({
   name: pkg.name,
   version: pkg.version,
   icons: {
-    48: "public/logo.png",
+    48: "public/icon.png",
   },
   action: {
     default_icon: {
-      48: "public/logo.png",
+      48: "public/icon.png",
     },
-    default_popup: "src/popup/index.html",
+    // default_popup: "src/popup/index.html",
     default_title: "click to open sidepanel",
   },
   devtools_page: "src/sidepanel/index.html",
@@ -37,7 +37,7 @@ export default defineManifest({
   options_page: "src/options/index.html",
   host_permissions: ["<all_urls>"],
   side_panel: {
-    default_path: "src/sidepanel/index.html",
+    default_path: "src/sidepanel/side-panel.html",
   },
   background: {
     service_worker: "src/background.ts",
